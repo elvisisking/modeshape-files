@@ -47,11 +47,11 @@ import org.modeshape.modeler.internal.ModelTypeManagerImpl;
 @RunWith( TestRunner.class )
 @SuppressWarnings( "javadoc" )
 public abstract class BaseTest {
-    
+
     protected static final String TEST_MODESHAPE_CONFIGURATION_PATH = "testModeShapeConfig.json";
     protected static final String TEST_REPOSITORY_STORE_PARENT_PATH;
     protected static final URL MODEL_TYPE_REPOSITORY;
-    
+
     protected static final String ARTIFACT_NAME = "artifact";
     protected static final String MODEL_NAME = "model";
     protected static final String XML_MODEL_TYPE_CATEGORY = "xml";
@@ -69,7 +69,7 @@ public abstract class BaseTest {
                                                  + "<" + XML_SAME_NAME_SIBLING + "></" + XML_SAME_NAME_SIBLING + ">"
                                                  + "</" + XML_ROOT + ">";
     protected static final String XSD_ARTIFACT = XML_DECLARATION + "<schema></schema>";
-    
+
     static {
         try {
             MODEL_TYPE_REPOSITORY = new URL( "file:src/test/resources/" );
@@ -80,31 +80,30 @@ public abstract class BaseTest {
             throw new RuntimeException( e );
         }
     }
-    
-    public ModeShapeModeler modeler;
-    public Manager manager;
-    public ModelTypeManagerImpl modelTypeManager;
-    
+
+    private ModeShapeModeler modeler;
+
     @After
     public void after() throws Exception {
-        modeler.close();
+        if ( modeler != null ) {
+            modeler.close();
+            modeler = null;
+        }
         deleteFolder( TEST_REPOSITORY_STORE_PARENT_PATH + "/modelerRepository" );
         deleteFolder( System.getProperty( "java.io.tmpdir" ) + "/modeshape-binary-store" );
     }
-    
+
     @Before
+    @SuppressWarnings( "unused" )
     public void before() throws Exception {
         MockitoAnnotations.initMocks( this );
-        modeler = new ModeShapeModeler( TEST_REPOSITORY_STORE_PARENT_PATH, TEST_MODESHAPE_CONFIGURATION_PATH );
-        manager = TestUtil.manager( modeler );
-        modelTypeManager = ( ModelTypeManagerImpl ) modeler.modelTypeManager();
     }
-    
+
     private void deleteFolder( final String folder ) throws Exception {
         final File file = new File( folder );
         if ( file.exists() )
             Files.walkFileTree( FileSystems.getDefault().getPath( file.toString() ), new SimpleFileVisitor< Path >() {
-                
+
                 @Override
                 public FileVisitResult postVisitDirectory( final Path folder,
                                                            final IOException e ) throws IOException {
@@ -112,7 +111,7 @@ public abstract class BaseTest {
                     Files.delete( folder );
                     return FileVisitResult.CONTINUE;
                 }
-                
+
                 @Override
                 public FileVisitResult visitFile( final Path file,
                                                   final BasicFileAttributes attrs ) throws IOException {
@@ -121,12 +120,22 @@ public abstract class BaseTest {
                 }
             } );
     }
-    
-    protected String importArtifact( final String content ) throws Exception {
-        return modeler.importArtifact( stream( content ), ARTIFACT_NAME );
+
+    public Manager manager() throws Exception {
+        return TestUtil.manager( modeler() );
     }
-    
-    protected InputStream stream( final String content ) {
+
+    public ModeShapeModeler modeler() throws Exception {
+        if ( modeler == null )
+            modeler = new ModeShapeModeler( TEST_REPOSITORY_STORE_PARENT_PATH, TEST_MODESHAPE_CONFIGURATION_PATH );
+        return modeler;
+    }
+
+    public ModelTypeManagerImpl modelTypeManager() throws Exception {
+        return ( ModelTypeManagerImpl ) modeler().modelTypeManager();
+    }
+
+    public InputStream stream( final String content ) {
         return new ByteArrayInputStream( content.getBytes() );
     }
 }

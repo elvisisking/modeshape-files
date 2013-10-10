@@ -41,32 +41,29 @@ import org.modeshape.modeler.ModelTypeManager;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
 
-/**
- * Tests for {@link ModelTypeManagerImpl}.
- */
 @SuppressWarnings( "javadoc" )
 public class ITModelTypeManager extends BaseIntegrationTest {
-    
+
     @Test
     public void shouldAllowRequestWhenModelTypeDoesNotHaveDependencyProcessor() throws Exception {
-        manager.run( new Task< Void >() {
-            
+        manager().run( new Task< Void >() {
+
             @Override
             public Void run( final Session session ) throws Exception {
                 final Node rootNode = session.getRootNode();
                 final Node modelNode = rootNode.addNode( "elvis" );
                 modelNode.addMixin( ModelerLexicon.MODEL_MIXIN );
-                assertThat( modelTypeManager.dependencyProcessor( modelNode ), nullValue() );
+                assertThat( modelTypeManager().dependencyProcessor( modelNode ), nullValue() );
                 return null;
             }
         } );
     }
-    
+
     @Test( expected = ModelerException.class )
     public void shouldFailToProcessDependenciesWhenNotAModelNode() throws Exception {
-        final ModelTypeManagerImpl modelTypeMgr = modelTypeManager;
-        modelTypeManager.manager.run( new Task< Void >() {
-            
+        final ModelTypeManagerImpl modelTypeMgr = modelTypeManager();
+        modelTypeManager().manager.run( new Task< Void >() {
+
             @Override
             public Void run( final Session session ) throws Exception {
                 final Node rootNode = session.getRootNode();
@@ -75,48 +72,48 @@ public class ITModelTypeManager extends BaseIntegrationTest {
             }
         } );
     }
-    
+
     @Test
-    public void shouldGetApplicablemodelTypeManager() throws Exception {
-        modelTypeManager.install( "sramp" );
-        modelTypeManager.install( "xsd" );
-        final Set< ModelType > types = modelTypeManager.modelTypesForArtifact( importArtifact( XSD_ARTIFACT ) );
+    public void shouldGetApplicableModelTypeManager() throws Exception {
+        modelTypeManager().install( "sramp" );
+        modelTypeManager().install( "xsd" );
+        final Set< ModelType > types = modelTypeManager().modelTypesForArtifact( importArtifact( XSD_ARTIFACT ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( false ) );
     }
-    
+
     @Test
     public void shouldGetModelTypeCategories() throws Exception {
-        assertThat( modelTypeManager.installableModelTypeCategories().isEmpty(), is( false ) );
+        assertThat( modelTypeManager().installableModelTypeCategories().isEmpty(), is( false ) );
     }
-    
+
     @Test
     public void shouldIniitializeModelTypeRepositories() throws Exception {
-        assertThat( modelTypeManager.modelTypeRepositories().contains( new URL( ModelTypeManager.JBOSS_MODEL_TYPE_REPOSITORY ) ), is( true ) );
-        assertThat( modelTypeManager.modelTypeRepositories().contains( new URL( ModelTypeManager.MAVEN_MODEL_TYPE_REPOSITORY ) ), is( true ) );
+        assertThat( modelTypeManager().modelTypeRepositories().contains( new URL( ModelTypeManager.JBOSS_MODEL_TYPE_REPOSITORY ) ), is( true ) );
+        assertThat( modelTypeManager().modelTypeRepositories().contains( new URL( ModelTypeManager.MAVEN_MODEL_TYPE_REPOSITORY ) ), is( true ) );
     }
-    
+
     @Test
     public void shouldInstallModelTypes() throws Exception {
-        final Collection< String > potentialSequencerClassNames = modelTypeManager.install( "java" );
+        final Collection< String > potentialSequencerClassNames = modelTypeManager().install( "java" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
-        assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
+        assertThat( modelTypeManager().modelTypes().isEmpty(), is( false ) );
     }
-    
+
     @Test
     public void shouldOnlyInstallModelTypeCategoryOnce() throws Exception {
-        modelTypeManager.install( "java" );
-        assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
-        final int size = modelTypeManager.modelTypes().size();
-        modelTypeManager.install( "java" );
-        assertThat( modelTypeManager.modelTypes().size(), is( size ) );
+        modelTypeManager().install( "java" );
+        assertThat( modelTypeManager().modelTypes().isEmpty(), is( false ) );
+        final int size = modelTypeManager().modelTypes().size();
+        modelTypeManager().install( "java" );
+        assertThat( modelTypeManager().modelTypes().size(), is( size ) );
     }
-    
+
     @Test
     public void shouldReturnUninstantiablePotentialSequencerClassNames() throws Exception {
-        Collection< String > potentialSequencerClassNames = modelTypeManager.install( "xsd" );
+        Collection< String > potentialSequencerClassNames = modelTypeManager().install( "xsd" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( false ) );
-        potentialSequencerClassNames = modelTypeManager.install( "sramp" );
+        potentialSequencerClassNames = modelTypeManager().install( "sramp" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
     }
 }

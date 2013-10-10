@@ -37,26 +37,26 @@ import org.modeshape.modeler.internal.Task;
 
 @SuppressWarnings( "javadoc" )
 public class ITModeler extends BaseIntegrationTest {
-    
+
     private static final String XSD_MODEL_TYPE_NAME = "org.modeshape.modeler.xsd.Xsd";
-    
+
     @Test
     public void shouldCreateModelOfSuppliedType() throws Exception {
-        modelTypeManager.install( "xml" );
-        modelTypeManager.install( "sramp" );
-        modelTypeManager.install( "xsd" );
+        modelTypeManager().install( "xml" );
+        modelTypeManager().install( "sramp" );
+        modelTypeManager().install( "xsd" );
         final String path = importArtifact( XSD_ARTIFACT );
         ModelType modelType = null;
-        for ( final ModelType type : modelTypeManager.modelTypesForArtifact( path ) ) {
+        for ( final ModelType type : modelTypeManager().modelTypesForArtifact( path ) ) {
             if ( type.name().equals( XSD_MODEL_TYPE_NAME ) ) {
                 modelType = type;
                 break;
             }
         }
-        final Model model = modeler.generateModel( path, ARTIFACT_NAME, modelType );
+        final Model model = modeler().generateModel( path, ARTIFACT_NAME, modelType );
         assertThat( model, notNullValue() );
-        manager.run( new Task< Void >() {
-            
+        manager().run( new Task< Void >() {
+
             @Override
             public Void run( final Session session ) throws Exception {
                 assertThat( session.getRootNode().hasNode( ARTIFACT_NAME ), is( true ) );
@@ -64,48 +64,48 @@ public class ITModeler extends BaseIntegrationTest {
             }
         } );
     }
-    
+
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfFileIsInvalid() throws Exception {
-        modelTypeManager.install( "xml" );
-        modeler.generateModel( importArtifact( XML_DECLARATION + "<stuff>" ),
-                               ARTIFACT_NAME,
-                               modelTypeManager.modelTypes().iterator().next() );
+        modelTypeManager().install( "xml" );
+        modeler().generateModel( importArtifact( XML_DECLARATION + "<stuff>" ),
+                                 ARTIFACT_NAME,
+                                 modelTypeManager().modelTypes().iterator().next() );
     }
-    
+
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
-        modelTypeManager.install( "xml" );
-        modeler.generateModel( importArtifact( "stuff" ), ARTIFACT_NAME, modelTypeManager.modelTypes().iterator().next() );
+        modelTypeManager().install( "xml" );
+        modeler().generateModel( importArtifact( "stuff" ), ARTIFACT_NAME, modelTypeManager().modelTypes().iterator().next() );
     }
-    
+
     @Test
     public void shouldNotFindDependencyProcessorForXsdModelNode() throws Exception {
-        modelTypeManager.install( "sramp" );
-        modelTypeManager.install( "xsd" );
-        
+        modelTypeManager().install( "sramp" );
+        modelTypeManager().install( "xsd" );
+
         // find XSD model type
         ModelType xsdModelType = null;
-        
-        for ( final ModelType type : modelTypeManager.modelTypes() ) {
+
+        for ( final ModelType type : modelTypeManager().modelTypes() ) {
             if ( type.name().equals( XSD_MODEL_TYPE_NAME ) ) {
                 xsdModelType = type;
                 break;
             }
         }
-        
+
         assertThat( xsdModelType, notNullValue() );
-        
+
         final String path = importArtifact( XSD_ARTIFACT );
-        final ModelImpl model = ( ModelImpl ) modeler.generateModel( path, ARTIFACT_NAME, xsdModelType );
-        modeler.manager.run( new Task< Void >() {
-            
+        final ModelImpl model = ( ModelImpl ) modeler().generateModel( path, ARTIFACT_NAME, xsdModelType );
+        modeler().manager.run( new Task< Void >() {
+
             @Override
             public Void run( final Session session ) throws Exception {
-                assertThat( modelTypeManager.dependencyProcessor( session.getNode( model.absolutePath() ) ), nullValue() );
+                assertThat( modelTypeManager().dependencyProcessor( session.getNode( model.absolutePath() ) ), nullValue() );
                 return null;
             }
         } );
     }
-    
+
 }

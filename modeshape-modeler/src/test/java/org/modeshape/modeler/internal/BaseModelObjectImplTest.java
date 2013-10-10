@@ -27,6 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 import org.junit.Test;
 import org.modeshape.jcr.JcrLexicon;
@@ -35,189 +36,180 @@ import org.modeshape.modeler.test.BaseTest;
 
 @SuppressWarnings( "javadoc" )
 public abstract class BaseModelObjectImplTest extends BaseTest {
-    
-    protected ModelObject failingModelObject;
-    
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.modeler.test.BaseTest#before()
-     */
-    @Override
-    public void before() throws Exception {
-        super.before();
-        failingModelObject = new ModelObjectImpl( manager, XML_ROOT, 0 );
+
+    protected ModelObject failingModelObject() {
+        return new ModelObjectImpl( mock( Manager.class ), XML_ROOT, 0 );
     }
-    
+
     protected ModelObject modelObject() throws Exception {
-        modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
-        modelTypeManager.install( "xml" );
+        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        modelTypeManager().install( "xml" );
         final ModelObject modelObject =
-            modeler.generateModel( stream( XML_ARTIFACT ), MODEL_NAME, modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+            modeler().generateModel( stream( XML_ARTIFACT ), MODEL_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
         assertThat( modelObject, notNullValue() );
         return modelObject;
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetBooleanValueIfNonBooleanProperty() throws Exception {
         modelObject().booleanValue( JcrLexicon.PRIMARY_TYPE.toString() );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetBooleanValueIfPropertyEmpty() throws Exception {
-        failingModelObject.booleanValue( " " );
+        failingModelObject().booleanValue( " " );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetBooleanValueIfPropertyNull() throws Exception {
-        failingModelObject.booleanValue( null );
+        failingModelObject().booleanValue( null );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetBooleanValuesIfNonBooleanProperty() throws Exception {
         modelObject().booleanValues( JcrLexicon.PRIMARY_TYPE.toString() );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetBooleanValuesIfPropertyEmpty() throws Exception {
-        failingModelObject.booleanValues( " " );
+        failingModelObject().booleanValues( " " );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetBooleanValuesIfPropertyNull() throws Exception {
-        failingModelObject.booleanValues( null );
+        failingModelObject().booleanValues( null );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetChildIfNameEmpty() throws Exception {
-        failingModelObject.child( " " );
+        failingModelObject().child( " " );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetChildIfNameNull() throws Exception {
-        failingModelObject.child( null );
+        failingModelObject().child( null );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetChildrenIfNameEmpty() throws Exception {
-        failingModelObject.children( " " );
+        failingModelObject().children( " " );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetChildrenIfNameNull() throws Exception {
-        failingModelObject.children( null );
+        failingModelObject().children( null );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetLongValueIfNonLongProperty() throws Exception {
         modelObject().longValue( JcrLexicon.PRIMARY_TYPE.toString() );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetLongValueIfPropertyEmpty() throws Exception {
-        failingModelObject.longValue( " " );
+        failingModelObject().longValue( " " );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetLongValueIfPropertyNull() throws Exception {
-        failingModelObject.longValue( null );
+        failingModelObject().longValue( null );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetLongValuesIfNonLongProperty() throws Exception {
         modelObject().longValues( JcrLexicon.PRIMARY_TYPE.toString() );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetLongValuesIfPropertyEmpty() throws Exception {
-        failingModelObject.longValues( " " );
+        failingModelObject().longValues( " " );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetLongValuesIfPropertyNull() throws Exception {
-        failingModelObject.longValues( null );
+        failingModelObject().longValues( null );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetStringValueIfPropertyEmpty() throws Exception {
-        failingModelObject.stringValue( " " );
+        failingModelObject().stringValue( " " );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetStringValueIfPropertyNull() throws Exception {
-        failingModelObject.stringValue( null );
+        failingModelObject().stringValue( null );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetStringValuesIfPropertyEmpty() throws Exception {
-        failingModelObject.stringValues( " " );
+        failingModelObject().stringValues( " " );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetStringValuesIfPropertyNull() throws Exception {
-        failingModelObject.stringValues( null );
+        failingModelObject().stringValues( null );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToIndicateIfChildHasSameNameSiblingsIfNameEmpty() throws Exception {
-        failingModelObject.childHasSameNameSiblings( " " );
+        failingModelObject().childHasSameNameSiblings( " " );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToIndicateIfChildHasSameNameSiblingsIfNameNull() throws Exception {
-        failingModelObject.childHasSameNameSiblings( null );
+        failingModelObject().childHasSameNameSiblings( null );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToIndicateIfItHasChildIfEmptyName() throws Exception {
-        failingModelObject.hasChild( " " );
+        failingModelObject().hasChild( " " );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToIndicateIfItHasChildIfNullName() throws Exception {
-        failingModelObject.hasChild( null );
+        failingModelObject().hasChild( null );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToIndicateIfItHasPropertyIfEmptyName() throws Exception {
-        failingModelObject.hasProperty( " " );
+        failingModelObject().hasProperty( " " );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToIndicateIfItHasPropertyIfNullName() throws Exception {
-        failingModelObject.hasProperty( null );
+        failingModelObject().hasProperty( null );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToIndicateIfPropertyHasMultipleValuesIfNameEmpty() throws Exception {
-        failingModelObject.propertyHasMultipleValues( " " );
+        failingModelObject().propertyHasMultipleValues( " " );
     }
-    
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToIndicateIfPropertyHasMultipleValuesIfNameNull() throws Exception {
-        failingModelObject.propertyHasMultipleValues( null );
+        failingModelObject().propertyHasMultipleValues( null );
     }
-    
+
     @Test
     public void shouldGetNullValueIfBooleanPropertyNotFound() throws Exception {
         assertThat( modelObject().booleanValue( "bogus" ), nullValue() );
     }
-    
+
     @Test
     public void shouldGetNullValueIfChildNotFound() throws Exception {
         assertThat( modelObject().child( "bogus" ), nullValue() );
     }
-    
+
     @Test
     public void shouldGetNullValueIfLongPropertyNotFound() throws Exception {
         assertThat( modelObject().longValue( "bogus" ), nullValue() );
     }
-    
+
     @Test
     public void shouldGetNullValueIfStringPropertyNotFound() throws Exception {
         assertThat( modelObject().stringValue( "bogus" ), nullValue() );
     }
-    
+
     @Test
     public void shouldGetStringValues() throws Exception {
         final String[] vals = modelObject().stringValues( JcrLexicon.PRIMARY_TYPE.toString() );
