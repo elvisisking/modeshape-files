@@ -52,14 +52,14 @@ import org.polyglotter.common.Logger;
  * 
  */
 public final class Modeler implements AutoCloseable {
-    
+
     /**
      * The path to the default ModeShape configuration, which uses a file-based repository
      */
     public static final String DEFAULT_MODESHAPE_CONFIGURATION_PATH = "jcr/modeShapeConfig.json";
-    
+
     final Manager manager;
-    
+
     /**
      * Uses a default ModeShape configuration.
      * 
@@ -71,7 +71,7 @@ public final class Modeler implements AutoCloseable {
     public Modeler( final String repositoryStoreParentPath ) throws ModelerException {
         this( repositoryStoreParentPath, DEFAULT_MODESHAPE_CONFIGURATION_PATH );
     }
-    
+
     /**
      * @param repositoryStoreParentPath
      *        the path to the folder that should contain the ModeShape repository store
@@ -84,7 +84,7 @@ public final class Modeler implements AutoCloseable {
                     final String modeShapeConfigurationPath ) throws ModelerException {
         manager = new Manager( repositoryStoreParentPath, modeShapeConfigurationPath );
     }
-    
+
     String absolutePath( String path ) {
         if ( path == null ) return "/";
         path = path.trim();
@@ -92,13 +92,13 @@ public final class Modeler implements AutoCloseable {
         if ( path.charAt( 0 ) == '/' ) return path;
         return '/' + path;
     }
-    
+
     String absolutePath( String path,
                          final String name ) {
         path = absolutePath( path );
         return path.endsWith( "/" ) ? path + name : path + '/' + name;
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -110,7 +110,7 @@ public final class Modeler implements AutoCloseable {
     public void close() throws ModelerException {
         manager.close();
     }
-    
+
     /**
      * @param artifactPath
      *        the workspace path to an artifact; must not be empty.
@@ -125,7 +125,7 @@ public final class Modeler implements AutoCloseable {
                                        final String modelPath ) throws ModelerException {
         return generateModel( artifactPath, modelPath, null );
     }
-    
+
     /**
      * Creates a model with the name of the supplied file.
      * 
@@ -144,7 +144,7 @@ public final class Modeler implements AutoCloseable {
                                 final ModelType modelType ) throws ModelerException {
         return generateModel( file, modelFolder, null, modelType );
     }
-    
+
     /**
      * Creates a model with the name of the supplied file.
      * 
@@ -171,7 +171,7 @@ public final class Modeler implements AutoCloseable {
             throw new ModelerException( e );
         }
     }
-    
+
     /**
      * @param stream
      *        the artifact's content to be imported. Must not be <code>null</code>.
@@ -191,7 +191,7 @@ public final class Modeler implements AutoCloseable {
         removeTemporaryArtifact( artifactPath );
         return model;
     }
-    
+
     /**
      * @param artifactPath
      *        the workspace path to an artifact; must not be empty.
@@ -209,7 +209,7 @@ public final class Modeler implements AutoCloseable {
         CheckArg.isNotEmpty( artifactPath, "artifactPath" );
         CheckArg.isNotEmpty( modelPath, "modelPath" );
         return manager.run( new Task< Model >() {
-            
+
             @Override
             public Model run( final Session session ) throws Exception {
                 final Node artifactNode = manager.artifactNode( session, artifactPath );
@@ -235,12 +235,12 @@ public final class Modeler implements AutoCloseable {
                                                                                 .getProperty( JcrLexicon.DATA.getString() ),
                                                                     modelNode,
                                                                     new Sequencer.Context() {
-                                                                        
+
                                                                         @Override
                                                                         public Calendar getTimestamp() {
                                                                             return cal;
                                                                         }
-                                                                        
+
                                                                         @Override
                                                                         public ValueFactory valueFactory() {
                                                                             return valueFactory;
@@ -256,7 +256,7 @@ public final class Modeler implements AutoCloseable {
             }
         } );
     }
-    
+
     /**
      * @param artifactUrl
      *        the URL of an artifact; must not be <code>null</code>.
@@ -273,7 +273,7 @@ public final class Modeler implements AutoCloseable {
                                 final ModelType modelType ) throws ModelerException {
         return generateModel( artifactUrl, modelFolder, null, modelType );
     }
-    
+
     /**
      * @param artifactUrl
      *        the URL of an artifact; must not be <code>null</code>.
@@ -296,7 +296,7 @@ public final class Modeler implements AutoCloseable {
         removeTemporaryArtifact( artifactPath );
         return model;
     }
-    
+
     /**
      * @param stream
      *        the artifact's content to be imported. Must not be <code>null</code>.
@@ -311,7 +311,7 @@ public final class Modeler implements AutoCloseable {
         CheckArg.isNotNull( stream, "stream" );
         CheckArg.isNotEmpty( workspacePath, "workspacePath" );
         return manager.run( new Task< String >() {
-            
+
             @Override
             public String run( final Session session ) throws Exception {
                 // Ensure the path is non-null, absolute, and ends with a slash
@@ -323,7 +323,7 @@ public final class Modeler implements AutoCloseable {
             }
         } );
     }
-    
+
     /**
      * @param url
      *        the name of the artifact as it should be stored in the workspace. Must not be empty.
@@ -337,7 +337,7 @@ public final class Modeler implements AutoCloseable {
                                   final String workspaceFolder ) throws ModelerException {
         return importArtifact( url, workspaceFolder, null );
     }
-    
+
     /**
      * @param url
      *        the name of the artifact as it should be stored in the workspace. Must not be empty.
@@ -364,7 +364,7 @@ public final class Modeler implements AutoCloseable {
             throw new ModelerException( e );
         }
     }
-    
+
     /**
      * @param file
      *        the file to be imported. Must not be <code>null</code>.
@@ -378,7 +378,7 @@ public final class Modeler implements AutoCloseable {
                               final String workspaceFolder ) throws ModelerException {
         return importFile( file, workspaceFolder, null );
     }
-    
+
     /**
      * @param file
      *        the file to be imported. Must not be <code>null</code>.
@@ -400,18 +400,18 @@ public final class Modeler implements AutoCloseable {
             throw new ModelerException( e );
         }
     }
-    
+
     /**
      * @param path
      *        a workspace path for a model
-     * @return the model at the supplied path
+     * @return the model at the supplied path, or <code>null</code> if not found
      * @throws ModelerException
      *         if any error occurs
      */
     public Model model( final String path ) throws ModelerException {
         CheckArg.isNotEmpty( path, "path" );
         return manager.run( new Task< Model >() {
-            
+
             @Override
             public Model run( final Session session ) throws Exception {
                 try {
@@ -421,26 +421,26 @@ public final class Modeler implements AutoCloseable {
                         throw new IllegalArgumentException( ModelerI18n.notModelPath.text( absPath ) );
                     return new ModelImpl( manager, absPath );
                 } catch ( final PathNotFoundException e ) {
-                    throw new IllegalArgumentException( e );
+                    return null;
                 }
             }
         } );
     }
-    
+
     /**
      * @return the model type manager
      */
     public ModelTypeManager modelTypeManager() {
         return manager.modelTypeManager;
     }
-    
+
     /**
      * @return the path to the configuration for the embedded ModeShape repository supplied when this Modeler was instantiated.
      */
     public String modeShapeConfigurationPath() {
         return manager.modeShapeConfigurationPath;
     }
-    
+
     private String name( String workspaceName,
                          final URL url ) {
         if ( workspaceName != null && !workspaceName.trim().isEmpty() ) return workspaceName;
@@ -448,7 +448,7 @@ public final class Modeler implements AutoCloseable {
         workspaceName = workspaceName.substring( workspaceName.lastIndexOf( '/' ) + 1 );
         return workspaceName;
     }
-    
+
     /**
      * @param modelNode
      *        the model node whose dependency processing is being requested (cannot be <code>null</code>)
@@ -462,26 +462,26 @@ public final class Modeler implements AutoCloseable {
                                 final ModelType modelType ) throws ModelerException {
         CheckArg.isNotNull( modelNode, "modelNode" );
         CheckArg.isNotNull( modelType, "modelType" );
-        
+
         return manager.run( new Task< String >() {
-            
+
             @Override
             public String run( final Session session ) throws Exception {
                 final DependencyProcessor dependencyProcessor = manager.modelTypeManager.dependencyProcessor( modelNode );
-                
+
                 if ( dependencyProcessor == null ) {
                     Logger.getLogger( getClass() ).debug( "No dependency processor found for model '" + modelNode.getName() + '\'' );
                     return null;
                 }
-                
+
                 return dependencyProcessor.process( modelNode, modelType, Modeler.this );
             }
         } );
     }
-    
+
     private void removeTemporaryArtifact( final String artifactPath ) throws ModelerException {
         manager.run( new Task< Void >() {
-            
+
             @Override
             public Void run( final Session session ) throws Exception {
                 session.getNode( artifactPath ).remove();
@@ -490,18 +490,18 @@ public final class Modeler implements AutoCloseable {
             }
         } );
     }
-    
+
     /**
      * @return the path to the folder that should contain the ModeShape repository store
      */
     public String repositoryStoreParentPath() {
         return System.getProperty( Manager.REPOSITORY_STORE_PARENT_PATH_PROPERTY );
     }
-    
+
     private void saveExternalLocation( final String path,
                                        final String location ) throws ModelerException {
         manager.run( new Task< Void >() {
-            
+
             @Override
             public Void run( final Session session ) throws Exception {
                 session.getNode( path ).setProperty( ModelerLexicon.EXTERNAL_LOCATION, location );
