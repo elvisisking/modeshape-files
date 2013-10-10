@@ -52,8 +52,9 @@ public class Manager {
      */
     public static final String REPOSITORY_STORE_PARENT_PATH_PROPERTY = "org.modeshape.modeler.repositoryStoreParentPath";
 
-    private final ModeShapeEngine modeShape;
-    final JcrRepository repository;
+    private ModeShapeEngine modeShape;
+    private JcrRepository repository;
+    private ModelTypeManagerImpl modelTypeManager;
 
     /**
      * 
@@ -61,46 +62,17 @@ public class Manager {
     public final String modeShapeConfigurationPath;
 
     /**
-     * 
-     */
-    public final ModelTypeManagerImpl modelTypeManager;
-
-    /**
      * @param repositoryStoreParentPath
      *        the path to the folder that should contain the ModeShape repository store
      * @param modeShapeConfigurationPath
      *        the path to a ModeShape configuration file
-     * @throws ModelerException
-     *         if any error occurs
      */
     public Manager( final String repositoryStoreParentPath,
-                    final String modeShapeConfigurationPath ) throws ModelerException {
+                    final String modeShapeConfigurationPath ) {
         CheckArg.isNotEmpty( repositoryStoreParentPath, "repositoryStoreParentPath" );
         CheckArg.isNotEmpty( modeShapeConfigurationPath, "modeShapeConfigurationPath" );
         System.setProperty( REPOSITORY_STORE_PARENT_PATH_PROPERTY, repositoryStoreParentPath );
         this.modeShapeConfigurationPath = modeShapeConfigurationPath;
-        try {
-            modeShape = new ModeShapeEngine();
-            modeShape.start();
-            final RepositoryConfiguration config = RepositoryConfiguration.read( modeShapeConfigurationPath );
-            final Problems problems = config.validate();
-            if ( problems.hasProblems() ) {
-                for ( final Problem problem : problems )
-                    Logger.getLogger( getClass() ).error( problem.getThrowable(), CommonI18n.text, problem.getMessage().text() );
-                throw problems.iterator().next().getThrowable();
-            }
-            JcrRepository repository;
-            try {
-                repository = modeShape.getRepository( config.getName() );
-            } catch ( final NoSuchRepositoryException err ) {
-                repository = modeShape.deploy( config );
-            }
-            this.repository = repository;
-            Logger.getLogger( getClass() ).info( ModelerI18n.modelerStarted );
-        } catch ( final Throwable e ) {
-            throw new ModelerException( e );
-        }
-        modelTypeManager = new ModelTypeManagerImpl( this );
     }
 
     /**
@@ -127,11 +99,48 @@ public class Manager {
      */
     public void close() throws ModelerException {
         try {
-            modeShape.shutdown().get();
+            if ( modeShape != null ) modeShape.shutdown().get();
         } catch ( InterruptedException | ExecutionException e ) {
             throw new ModelerException( e );
         }
         Logger.getLogger( getClass() ).info( ModelerI18n.modelerStopped );
+    }
+
+    /**
+     * @return the model type manager
+     * @throws ModelerException
+     *         if any error occurs
+     */
+    public ModelTypeManagerImpl modelTypeManager() throws ModelerException {
+        if ( modelTypeManager == null ) modelTypeManager = new ModelTypeManagerImpl( this );
+        return modelTypeManager;
+    }
+
+    JcrRepository repository() throws ModelerException {
+        if ( repository == null ) {
+            try {
+                modeShape = new ModeShapeEngine();
+                modeShape.start();
+                final RepositoryConfiguration config = RepositoryConfiguration.read( modeShapeConfigurationPath );
+                final Problems problems = config.validate();
+                if ( problems.hasProblems() ) {
+                    for ( final Problem problem : problems )
+                        Logger.getLogger( getClass() ).error( problem.getThrowable(), CommonI18n.text, problem.getMessage().text() );
+                    throw problems.iterator().next().getThrowable();
+                }
+                JcrRepository repository;
+                try {
+                    repository = modeShape.getRepository( config.getName() );
+                } catch ( final NoSuchRepositoryException err ) {
+                    repository = modeShape.deploy( config );
+                }
+                this.repository = repository;
+                Logger.getLogger( getClass() ).info( ModelerI18n.modelerStarted );
+            } catch ( final Throwable e ) {
+                throw new ModelerException( e );
+            }
+        }
+        return repository;
     }
 
     /**
@@ -147,7 +156,7 @@ public class Manager {
                         final SystemTask< T > task
                     ) throws ModelerException {
         try {
-            final Session session = repository.login( "modeler" );
+            final Session session = repository().login( "modeler" );
             final String path = '/' + systemObject.getClass().getSimpleName();
             final Node node;
             if ( session.nodeExists( path ) )
@@ -179,7 +188,7 @@ public class Manager {
      */
     public < T > T run( final Task< T > task ) throws ModelerException {
         try {
-            final Session session = repository.login( "default" );
+            final Session session = repository().login( "default" );
             try {
                 return task.run( session );
             } catch ( final RuntimeException e ) {

@@ -228,8 +228,10 @@ public interface Modeler extends AutoCloseable {
 
     /**
      * @return the model type manager
+     * @throws ModelerException
+     *         if any error occurs
      */
-    ModelTypeManager modelTypeManager();
+    ModelTypeManager modelTypeManager() throws ModelerException;
 
     /**
      * @return the path to the configuration for the embedded ModeShape repository supplied when this ModeShapeModeler was
