@@ -39,7 +39,7 @@ public class ModelImpl extends ModelObjectImpl implements Model {
     
     /**
      * @param manager
-     *        the Modeler's manager
+     *        the ModeShapeModeler's manager
      * @param modelPath
      *        a path to a model
      */

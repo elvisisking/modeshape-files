@@ -46,9 +46,9 @@ import org.polyglotter.common.Logger;
  * The XSD dependency processor for the ModeShape modeler.
  */
 public final class XsdDependencyProcessor implements DependencyProcessor, XsdLexicon {
-    
+
     private static final Logger LOGGER = Logger.getLogger( XsdDependencyProcessor.class );
-    
+
     /**
      * @param path
      *        the path being normalized (cannot be <code>null</code> or empty)
@@ -60,7 +60,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
         final URI uri = new URI( path ).normalize();
         return uri.toString();
     }
-    
+
     /**
      * @param input
      *        the text being checked (cannot be <code>null</code> or empty)
@@ -74,19 +74,18 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
         final URI uri = new URI( input ).normalize();
         return !uri.isAbsolute();
     }
-    
+
     private boolean dependencyNode( final Node node ) throws Exception {
         assert ( node != null );
-        
+
         final String primaryType = node.getPrimaryNodeType().getName();
         return ( IMPORT.equals( primaryType ) || INCLUDE.equals( primaryType ) || REDEFINE.equals( primaryType ) );
     }
-    
+
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.internal.DependencyProcessor#process(javax.jcr.Node, org.modeshape.modeler.ModelType,
-     *      org.modeshape.modeler.Modeler)
+     * @see DependencyProcessor#process(Node, ModelType, Modeler)
      */
     @Override
     public String process( final Node modelNode,
@@ -100,70 +99,70 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                 throw new ModelerException( e );
             }
         }
-        
+
         try {
             LOGGER.debug( "Processing model node '%s'", modelNode.getName() );
             Node schemaNode = null;
-            
+
             { // find schema node
                 final NodeIterator itr = modelNode.getParent().getNodes();
-                
+
                 while ( itr.hasNext() ) {
                     final Node kid = itr.nextNode();
-                    
+
                     if ( SCHEMA_DOCUMENT.equals( kid.getPrimaryNodeType().getName() ) ) {
                         schemaNode = kid;
                         break;
                     }
                 }
             }
-            
+
             // should always have a schema node
             if ( schemaNode == null ) {
                 throw new ModelerException( XsdModelerI18n.schemaNodeNotFound, modelNode.getName() );
             }
-            
+
             // iterate over schema node's children to find dependencies
             final NodeIterator itr = schemaNode.getNodes();
-            
+
             if ( !itr.hasNext() ) {
                 return null; // no dependencies node created
             }
-            
+
             Node dependenciesNode = null;
             final List< String > pathsToMissingDependencies = new ArrayList< String >( ( int ) itr.getSize() );
-            
+
             // find the dependency nodes
             while ( itr.hasNext() ) {
                 final Node kid = itr.nextNode();
-                
+
                 if ( !dependencyNode( kid ) ) {
                     continue;
                 }
-                
+
                 LOGGER.debug( "Processing dependency node '%s'", kid.getName() );
-                
+
                 // create dependencies folder node if not already created
                 if ( dependenciesNode == null ) {
                     dependenciesNode = modelNode.addNode( ModelerLexicon.DEPENDENCIES_NODE, ModelerLexicon.DEPENDENCIES_NODE );
                     LOGGER.debug( "Created dependencies folder node '%s'", dependenciesNode.getPath() );
                 }
-                
+
                 // create dependency node
                 final Node dependencyNode =
                     dependenciesNode.addNode( ModelerLexicon.DEPENDENCY_NODE, ModelerLexicon.DEPENDENCY_NODE );
-                
+
                 // set input property
                 final Property locationProp = kid.getProperty( SCHEMA_LOCATION );
                 final String location = locationProp.getString();
                 dependencyNode.setProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY, new String[] { location } );
                 LOGGER.debug( "Setting dependency source reference property to '%s'", location );
-                
+
                 // derive path using model node path as starting point
                 Node node = modelNode;
                 String path = normalizePath( location );
                 boolean exists = false;
-                
+
                 if ( pathIsRelative( path ) ) {
                     while ( path.startsWith( SELF_PATH ) || path.startsWith( PARENT_PATH ) ) {
                         if ( path.startsWith( PARENT_PATH ) ) {
@@ -171,54 +170,54 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                             if ( node.getDepth() == 0 ) {
                                 throw new ModelerException( XsdModelerI18n.relativePathNotValid, path, modelNode.getName() );
                             }
-                            
+
                             node = node.getParent();
                             path = path.substring( ( PARENT_PATH + '/' ).length() );
                         } else {
                             path = path.substring( ( SELF_PATH + '/' ).length() );
                         }
                     }
-                    
+
                     // insert parent path
                     String parentPath = node.getPath();
-                    
+
                     if ( !parentPath.endsWith( "/" ) ) {
                         parentPath += "/";
                     }
-                    
+
                     path = parentPath + path;
                 } else {
                     // TODO need more path analysis to include the original path property
                 }
-                
+
                 // strip off leading slash to make path relative
                 exists = rootNode( node ).hasNode( path.substring( 1 ) );
                 LOGGER.debug( "Path '%s' exists '%s'", path, exists );
-                
+
                 dependencyNode.setProperty( ModelerLexicon.PATH_PROPERTY, path );
                 LOGGER.debug( "Setting dependency path property to '%s'", path );
-                
+
                 if ( !exists ) {
                     pathsToMissingDependencies.add( path );
                 }
             }
-            
+
             // did not find any dependencies
             if ( dependenciesNode == null ) {
                 return null;
             }
-            
+
             // process any missing dependencies
             if ( !pathsToMissingDependencies.isEmpty() ) {
                 uploadMissingDependencies( pathsToMissingDependencies, modeler, modelType );
             }
-            
+
             return dependenciesNode.getPath();
         } catch ( final Exception e ) {
             throw new ModelerException( e );
         }
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -227,18 +226,18 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
     @Override
     public boolean processable( final Node modelNode ) throws ModelerException {
         CheckArg.isNotNull( modelNode, "modelNode" );
-        
+
         try {
             return MODEL_ID.equals( modelNode.getProperty( ModelerLexicon.MODEL_TYPE ).getString() );
         } catch ( final Exception e ) {
             throw new ModelerException( e );
         }
     }
-    
+
     private Node rootNode( final Node node ) throws Exception {
         return ( Node ) node.getAncestor( 0 );
     }
-    
+
     private void uploadMissingDependencies( final List< String > paths,
                                             final Modeler modeler,
                                             final ModelType modelType ) {
@@ -255,5 +254,5 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
         // }
         // }
     }
-    
+
 }

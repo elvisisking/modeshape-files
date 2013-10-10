@@ -63,7 +63,7 @@ import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.ModelTypeManager;
-import org.modeshape.modeler.Modeler;
+import org.modeshape.modeler.ModeShapeModeler;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.ModelerI18n;
 import org.polyglotter.common.Logger;
@@ -342,7 +342,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                             if ( Sequencer.class.isAssignableFrom( sequencerClass )
                                  && !Modifier.isAbstract( sequencerClass.getModifiers() ) ) {
                                 String name =
-                                    Modeler.class.getPackage().getName() + '.' + category + '.' + sequencerClass.getSimpleName();
+                                    ModeShapeModeler.class.getPackage().getName() + '.' + category + '.' + sequencerClass.getSimpleName();
                                 name =
                                     name.endsWith( "Sequencer" ) ? name.substring( 0, name.length() - "Sequencer".length() ) : name;
                                 final ModelTypeImpl type = new ModelTypeImpl( manager, category, name, sequencerClass );

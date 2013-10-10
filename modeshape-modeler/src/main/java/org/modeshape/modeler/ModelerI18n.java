@@ -26,15 +26,16 @@ package org.modeshape.modeler;
 import org.polyglotter.common.I18n;
 
 /**
- * Internationalized string constants, in alphabetical order, for the <strong>ModeShape Modeler</strong> project.
+ * Internationalized string constants, in alphabetical order, for the <strong>ModeShape ModeShapeModeler</strong> project.
  */
 @SuppressWarnings( "javadoc" )
 public final class ModelerI18n {
-    
+
     public static final I18n modelerStarted = new I18n( "ModeShape Modeler started" );
     public static final I18n modelerStopped = new I18n( "ModeShape Modeler stopped" );
     public static final I18n mustBeModelNode = new I18n( "Node '%s' is not a model node" );
-    public static final I18n sessionNotSavedWhenCreatingModel = new I18n( "The session was not saved when creating model for '%s'" );
+    public static final I18n sessionNotSavedWhenCreatingModel =
+        new I18n( "The session was not saved when creating model for '%s'" );
     public static final I18n unableToDetermineDefaultModelType = new I18n( "Unable to determine default model type for file %s" );
     public static final I18n unableToFindModelTypeCategory =
         new I18n( "Unable to find model type category \"%s\" in registered model type repositories" );
