@@ -26,4 +26,9 @@ package org.modeshape.modeler.integration;
 import org.modeshape.modeler.test.BaseTest;
 
 @SuppressWarnings( "javadoc" )
-public abstract class BaseIntegrationTest extends BaseTest {}
+public abstract class BaseIntegrationTest extends BaseTest {
+
+    public String importArtifact( final String content ) throws Exception {
+        return modeler().importArtifact( stream( content ), ARTIFACT_NAME );
+    }
+}

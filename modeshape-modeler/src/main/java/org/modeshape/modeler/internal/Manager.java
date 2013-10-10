@@ -45,26 +45,26 @@ import org.polyglotter.common.Logger;
 /**
  * 
  */
-public final class Manager {
-    
+public class Manager {
+
     /**
      * 
      */
     public static final String REPOSITORY_STORE_PARENT_PATH_PROPERTY = "org.modeshape.modeler.repositoryStoreParentPath";
-    
+
     private final ModeShapeEngine modeShape;
     final JcrRepository repository;
-    
+
     /**
      * 
      */
     public final String modeShapeConfigurationPath;
-    
+
     /**
      * 
      */
     public final ModelTypeManagerImpl modelTypeManager;
-    
+
     /**
      * @param repositoryStoreParentPath
      *        the path to the folder that should contain the ModeShape repository store
@@ -102,7 +102,7 @@ public final class Manager {
         }
         modelTypeManager = new ModelTypeManagerImpl( this );
     }
-    
+
     /**
      * @param session
      *        a session
@@ -120,7 +120,7 @@ public final class Manager {
             throw new IllegalArgumentException( e );
         }
     }
-    
+
     /**
      * @throws ModelerException
      *         if any problem occurs
@@ -133,7 +133,7 @@ public final class Manager {
         }
         Logger.getLogger( getClass() ).info( ModelerI18n.modelerStopped );
     }
-    
+
     /**
      * @param systemObject
      *        the system class for which the supplied system task will be run.
@@ -169,7 +169,7 @@ public final class Manager {
             throw new ModelerException( e );
         }
     }
-    
+
     /**
      * @param task
      *        a task
