@@ -29,7 +29,7 @@ package org.modeshape.modeler.internal;
 public interface ModelerLexicon {
     
     /**
-     * The ModeShape Modeler namespace prefix. Value is {@value} .
+     * The ModeShape ModeShapeModeler namespace prefix. Value is {@value} .
      */
     String NAMESPACE_PREFIX = "mm:";
     

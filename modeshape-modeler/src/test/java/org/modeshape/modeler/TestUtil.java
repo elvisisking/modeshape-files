@@ -28,8 +28,8 @@ import org.modeshape.modeler.internal.Manager;
 @SuppressWarnings( "javadoc" )
 public class TestUtil {
     
-    public static Manager manager( final Modeler modeler ) {
-        return modeler.manager;
+    public static Manager manager( final ModeShapeModeler modeShapeModeler ) {
+        return modeShapeModeler.manager;
     }
     
     private TestUtil() {}

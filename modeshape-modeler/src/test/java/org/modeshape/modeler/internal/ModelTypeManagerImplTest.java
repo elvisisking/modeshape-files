@@ -42,7 +42,7 @@ import javax.jcr.Value;
 import org.junit.Test;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.ModelTypeManager;
-import org.modeshape.modeler.Modeler;
+import org.modeshape.modeler.ModeShapeModeler;
 import org.modeshape.modeler.TestUtil;
 import org.modeshape.modeler.test.BaseTest;
 
@@ -209,20 +209,20 @@ public class ModelTypeManagerImplTest extends BaseTest {
     public void shouldLoadState() throws Exception {
         modeler.close();
         int repos;
-        try ( Modeler modeler = new Modeler( TEST_REPOSITORY_STORE_PARENT_PATH ) ) {
-            final ModelTypeManagerImpl modelTypeManager = ( ModelTypeManagerImpl ) modeler.modelTypeManager();
+        try ( ModeShapeModeler modeShapeModeler = new ModeShapeModeler( TEST_REPOSITORY_STORE_PARENT_PATH ) ) {
+            final ModelTypeManagerImpl modelTypeManager = ( ModelTypeManagerImpl ) modeShapeModeler.modelTypeManager();
             repos = modelTypeManager.modelTypeRepositories().size();
             modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
             modelTypeManager.install( "java" );
             modelTypeManager.install( "xsd" );
         }
-        try ( Modeler modeler = new Modeler( TEST_REPOSITORY_STORE_PARENT_PATH ) ) {
-            final ModelTypeManagerImpl modelTypeManager = ( ModelTypeManagerImpl ) modeler.modelTypeManager();
+        try ( ModeShapeModeler modeShapeModeler = new ModeShapeModeler( TEST_REPOSITORY_STORE_PARENT_PATH ) ) {
+            final ModelTypeManagerImpl modelTypeManager = ( ModelTypeManagerImpl ) modeShapeModeler.modelTypeManager();
             assertThat( modelTypeManager.modelTypeRepositories().size(), not( repos ) );
             assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
             assertThat( modelTypeManager.libraryClassLoader.getURLs().length > 0, is( true ) );
             assertThat( modelTypeManager.potentialSequencerClassNamesByCategory.isEmpty(), is( false ) );
-            TestUtil.manager( modeler ).run( modelTypeManager, new SystemTask< Void >() {
+            TestUtil.manager( modeShapeModeler ).run( modelTypeManager, new SystemTask< Void >() {
                 
                 @Override
                 public Void run( final Session session,

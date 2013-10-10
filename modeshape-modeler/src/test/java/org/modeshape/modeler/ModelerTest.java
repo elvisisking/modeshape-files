@@ -175,8 +175,8 @@ public final class ModelerTest extends BaseTest {
         modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager.install( "xml" );
         final Model model = modeler.generateModel( new File( "src/test/resources/Books.xsd" ),
-                                                   null,
-                                                   modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+                                                            null,
+                                                            modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
         assertThat( model, notNullValue() );
     }
 
@@ -185,9 +185,9 @@ public final class ModelerTest extends BaseTest {
         modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager.install( "xml" );
         final Model model = modeler.generateModel( new File( "src/test/resources/Books.xsd" ),
-                                                   null,
-                                                   ARTIFACT_NAME,
-                                                   modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+                                                            null,
+                                                            ARTIFACT_NAME,
+                                                            modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
         assertThat( model, notNullValue() );
         assertThat( model.name(), is( ARTIFACT_NAME ) );
     }
@@ -203,8 +203,8 @@ public final class ModelerTest extends BaseTest {
         modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager.install( "xml" );
         final Model model = modeler.generateModel( new URL( "file:src/test/resources/Books.xsd" ),
-                                                   null,
-                                                   modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+                                                            null,
+                                                            modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
         assertThat( model, notNullValue() );
     }
 
@@ -213,9 +213,9 @@ public final class ModelerTest extends BaseTest {
         modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager.install( "xml" );
         final Model model = modeler.generateModel( new URL( "file:src/test/resources/Books.xsd" ),
-                                                   null,
-                                                   ARTIFACT_NAME,
-                                                   modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+                                                            null,
+                                                            ARTIFACT_NAME,
+                                                            modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
         assertThat( model, notNullValue() );
         assertThat( model.name(), is( ARTIFACT_NAME ) );
     }
@@ -237,9 +237,9 @@ public final class ModelerTest extends BaseTest {
     @Test
     public void shouldGetDefaultModeShapeConfigurationPathIfNotSet() throws Exception {
         this.modeler.close();
-        final Modeler modeler = new Modeler( this.modeler.repositoryStoreParentPath() );
-        assertThat( modeler.modeShapeConfigurationPath(), is( Modeler.DEFAULT_MODESHAPE_CONFIGURATION_PATH ) );
-        modeler.close();
+        final ModeShapeModeler modeShapeModeler = new ModeShapeModeler( this.modeler.repositoryStoreParentPath() );
+        assertThat( modeShapeModeler.modeShapeConfigurationPath(), is( Modeler.DEFAULT_MODESHAPE_CONFIGURATION_PATH ) );
+        modeShapeModeler.close();
     }
 
     @Test
@@ -277,16 +277,18 @@ public final class ModelerTest extends BaseTest {
 
     @Test
     public void shouldImportFile() throws Exception {
-        final String path = modeler.importFile( new File( getClass().getClassLoader().getResource( "Books.xsd" ).toURI() ),
-                                                null );
+        final String path =
+            modeler.importFile( new File( getClass().getClassLoader().getResource( "Books.xsd" ).toURI() ),
+                                         null );
         assertThat( path, is( "/Books.xsd" ) );
         verifyPathExistsWithContent( path );
     }
 
     @Test
     public void shouldImportFileToSuppliedPath() throws Exception {
-        final String path = modeler.importFile( new File( getClass().getClassLoader().getResource( "Books.xsd" ).toURI() ),
-                                                "/test" );
+        final String path =
+            modeler.importFile( new File( getClass().getClassLoader().getResource( "Books.xsd" ).toURI() ),
+                                         "/test" );
         assertThat( path, is( "/test/Books.xsd" ) );
         verifyPathExistsWithContent( path );
     }

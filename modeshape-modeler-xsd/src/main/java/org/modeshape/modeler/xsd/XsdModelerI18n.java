@@ -26,7 +26,7 @@ package org.modeshape.modeler.xsd;
 import org.polyglotter.common.I18n;
 
 /**
- * Internationalized string constants, in alphabetical order, for the <strong>XSD ModeShape Modeler</strong> project.
+ * Internationalized string constants, in alphabetical order, for the <strong>XSD ModeShape ModeShapeModeler</strong> project.
  */
 @SuppressWarnings( "javadoc" )
 public class XsdModelerI18n {

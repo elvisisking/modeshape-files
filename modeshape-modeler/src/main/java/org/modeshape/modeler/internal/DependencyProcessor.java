@@ -33,17 +33,17 @@ import org.modeshape.modeler.ModelerException;
  * Processes dependencies for a specific model type.
  */
 public interface DependencyProcessor {
-    
+
     /**
      * A relative path segment for the parent path. Value is {@value} .
      */
     String PARENT_PATH = "..";
-    
+
     /**
      * A relative path segment for the current path. Value is {@value} .
      */
     String SELF_PATH = ".";
-    
+
     /**
      * @param modelNode
      *        the model node whose dependencies are being processed (cannot be <code>null</code>)
@@ -59,7 +59,7 @@ public interface DependencyProcessor {
     String process( final Node modelNode,
                     final ModelType modelType,
                     final Modeler modeler ) throws ModelerException;
-    
+
     /**
      * @param modelNode
      *        the model node being checked (cannot be <code>null</code>)
@@ -68,5 +68,5 @@ public interface DependencyProcessor {
      *         if an error occurs
      */
     boolean processable( final Node modelNode ) throws ModelerException;
-    
+
 }

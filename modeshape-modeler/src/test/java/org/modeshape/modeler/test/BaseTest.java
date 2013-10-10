@@ -39,7 +39,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.MockitoAnnotations;
-import org.modeshape.modeler.Modeler;
+import org.modeshape.modeler.ModeShapeModeler;
 import org.modeshape.modeler.TestUtil;
 import org.modeshape.modeler.internal.Manager;
 import org.modeshape.modeler.internal.ModelTypeManagerImpl;
@@ -81,7 +81,7 @@ public abstract class BaseTest {
         }
     }
     
-    public Modeler modeler;
+    public ModeShapeModeler modeler;
     public Manager manager;
     public ModelTypeManagerImpl modelTypeManager;
     
@@ -95,7 +95,7 @@ public abstract class BaseTest {
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks( this );
-        modeler = new Modeler( TEST_REPOSITORY_STORE_PARENT_PATH, TEST_MODESHAPE_CONFIGURATION_PATH );
+        modeler = new ModeShapeModeler( TEST_REPOSITORY_STORE_PARENT_PATH, TEST_MODESHAPE_CONFIGURATION_PATH );
         manager = TestUtil.manager( modeler );
         modelTypeManager = ( ModelTypeManagerImpl ) modeler.modelTypeManager();
     }
