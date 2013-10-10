@@ -60,10 +60,8 @@ public final class ModeShapeModeler implements Modeler {
      * 
      * @param repositoryStoreParentPath
      *        the path to the folder that should contain the ModeShape repository store
-     * @throws ModelerException
-     *         if any error occurs
      */
-    public ModeShapeModeler( final String repositoryStoreParentPath ) throws ModelerException {
+    public ModeShapeModeler( final String repositoryStoreParentPath ) {
         this( repositoryStoreParentPath, DEFAULT_MODESHAPE_CONFIGURATION_PATH );
     }
 
@@ -72,11 +70,9 @@ public final class ModeShapeModeler implements Modeler {
      *        the path to the folder that should contain the ModeShape repository store
      * @param modeShapeConfigurationPath
      *        the path to a ModeShape configuration file
-     * @throws ModelerException
-     *         if any error occurs
      */
     public ModeShapeModeler( final String repositoryStoreParentPath,
-                             final String modeShapeConfigurationPath ) throws ModelerException {
+                             final String modeShapeConfigurationPath ) {
         manager = new Manager( repositoryStoreParentPath, modeShapeConfigurationPath );
     }
 
@@ -179,8 +175,8 @@ public final class ModeShapeModeler implements Modeler {
                 ModelType type = modelType;
                 if ( modelType == null ) {
                     // If no model type supplied, use default model type if one exists
-                    type = manager.modelTypeManager.defaultModelType( artifactNode,
-                                                                      manager.modelTypeManager.modelTypes( artifactNode ) );
+                    type = manager.modelTypeManager().defaultModelType( artifactNode,
+                                                                        manager.modelTypeManager().modelTypes( artifactNode ) );
                     if ( type == null )
                         throw new IllegalArgumentException( ModelerI18n.unableToDetermineDefaultModelType.text( artifactPath ) );
                     throw new UnsupportedOperationException( "Not yet implemented" );
@@ -363,8 +359,8 @@ public final class ModeShapeModeler implements Modeler {
      * @see Modeler#modelTypeManager()
      */
     @Override
-    public ModelTypeManager modelTypeManager() {
-        return manager.modelTypeManager;
+    public ModelTypeManager modelTypeManager() throws ModelerException {
+        return manager.modelTypeManager();
     }
 
     /**
@@ -394,7 +390,7 @@ public final class ModeShapeModeler implements Modeler {
 
             @Override
             public String run( final Session session ) throws Exception {
-                final DependencyProcessor dependencyProcessor = manager.modelTypeManager.dependencyProcessor( modelNode );
+                final DependencyProcessor dependencyProcessor = manager.modelTypeManager().dependencyProcessor( modelNode );
 
                 if ( dependencyProcessor == null ) {
                     Logger.getLogger( getClass() ).debug( "No dependency processor found for model '" + modelNode.getName() + '\'' );

@@ -121,11 +121,11 @@ public abstract class BaseTest {
             } );
     }
 
-    public Manager manager() throws Exception {
+    public Manager manager() {
         return TestUtil.manager( modeler() );
     }
 
-    public ModeShapeModeler modeler() throws Exception {
+    public ModeShapeModeler modeler() {
         if ( modeler == null )
             modeler = new ModeShapeModeler( TEST_REPOSITORY_STORE_PARENT_PATH, TEST_MODESHAPE_CONFIGURATION_PATH );
         return modeler;

@@ -239,7 +239,7 @@ public final class ModelerTest extends BaseTest {
     }
 
     @Test
-    public void shouldGetChangedModeShapeConfigurationPath() throws Exception {
+    public void shouldGetChangedModeShapeConfigurationPath() {
         assertThat( modeler().modeShapeConfigurationPath(), is( TEST_MODESHAPE_CONFIGURATION_PATH ) );
     }
 
@@ -265,7 +265,7 @@ public final class ModelerTest extends BaseTest {
     }
 
     @Test
-    public void shouldGetRepositoryStoreParentPath() throws Exception {
+    public void shouldGetRepositoryStoreParentPath() {
         assertThat( modeler().repositoryStoreParentPath(), is( TEST_REPOSITORY_STORE_PARENT_PATH ) );
     }
 

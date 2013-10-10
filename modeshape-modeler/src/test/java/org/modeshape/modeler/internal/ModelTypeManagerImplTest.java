@@ -218,8 +218,8 @@ public class ModelTypeManagerImplTest extends BaseTest {
         modeler().close();
         int repos;
         try ( Modeler modeler = new ModeShapeModeler( TEST_REPOSITORY_STORE_PARENT_PATH ) ) {
-            repos = modelTypeManager().modelTypeRepositories().size();
             final ModelTypeManager modelTypeManager = modeler.modelTypeManager();
+            repos = modelTypeManager.modelTypeRepositories().size();
             modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
             modelTypeManager.install( "java" );
             modelTypeManager.install( "xsd" );
@@ -269,7 +269,7 @@ public class ModelTypeManagerImplTest extends BaseTest {
             @Override
             public Void run( final Session session,
                              final Node systemNode ) throws Exception {
-                final String version = manager().repository.getDescriptor( Repository.REP_VERSION_DESC );
+                final String version = manager().repository().getDescriptor( Repository.REP_VERSION_DESC );
                 final String archiveName = "modeshape-sequencer-test-" + version + "-module-with-dependencies.zip";
                 final Value[] vals = new Value[] { session.getValueFactory().createValue( archiveName ) };
                 systemNode.setProperty( ModelTypeManagerImpl.ZIPS, vals );

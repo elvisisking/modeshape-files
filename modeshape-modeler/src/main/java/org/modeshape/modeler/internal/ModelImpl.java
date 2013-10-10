@@ -36,7 +36,7 @@ import org.modeshape.modeler.ModelerException;
  * 
  */
 public class ModelImpl extends ModelObjectImpl implements Model {
-    
+
     /**
      * @param manager
      *        the ModeShapeModeler's manager
@@ -47,7 +47,7 @@ public class ModelImpl extends ModelObjectImpl implements Model {
                       final String modelPath ) {
         super( manager, modelPath, -1 );
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -56,7 +56,7 @@ public class ModelImpl extends ModelObjectImpl implements Model {
     @Override
     public URL externalLocation() throws ModelerException {
         return manager.run( new Task< URL >() {
-            
+
             @Override
             public URL run( final Session session ) throws Exception {
                 final Node model = session.getNode( path );
@@ -65,7 +65,7 @@ public class ModelImpl extends ModelObjectImpl implements Model {
             }
         } );
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -74,10 +74,12 @@ public class ModelImpl extends ModelObjectImpl implements Model {
     @Override
     public ModelType modelType() throws ModelerException {
         return manager.run( new Task< ModelType >() {
-            
+
             @Override
             public ModelType run( final Session session ) throws Exception {
-                return manager.modelTypeManager.modelType( session.getNode( path ).getProperty( ModelerLexicon.MODEL_TYPE ).getString() );
+                return manager.modelTypeManager().modelType( session.getNode( path )
+                                                                    .getProperty( ModelerLexicon.MODEL_TYPE )
+                                                                    .getString() );
             }
         } );
     }

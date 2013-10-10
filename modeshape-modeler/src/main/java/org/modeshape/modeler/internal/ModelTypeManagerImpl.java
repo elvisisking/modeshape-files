@@ -61,9 +61,9 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.sequencer.Sequencer;
+import org.modeshape.modeler.ModeShapeModeler;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.ModelTypeManager;
-import org.modeshape.modeler.ModeShapeModeler;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.ModelerI18n;
 import org.polyglotter.common.Logger;
@@ -72,7 +72,7 @@ import org.polyglotter.common.Logger;
  * 
  */
 public final class ModelTypeManagerImpl implements ModelTypeManager {
-    
+
     private static final String MODEL_TYPE_REPOSITORIES = "modelTypeRepositories";
     static final String ZIPS = "zips";
     static final String JARS = "jars";
@@ -80,25 +80,25 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     private static final String CATEGORY = "category";
     private static final String SEQUENCER_CLASS = "sequencerClass";
     private static final String POTENTIAL_SEQUENCER_CLASS_NAMES = "potentialSequencerClassNamesByCategory";
-    
+
     static final Logger LOGGER = Logger.getLogger( ModelTypeManagerImpl.class );
-    
+
     /**
      * 
      */
     public static final String MODESHAPE_GROUP = "org/modeshape";
     static final URL[] EMPTY_URLS = new URL[ 0 ];
-    
+
     final Manager manager;
-    
+
     final LinkedList< URL > modelTypeRepositories = new LinkedList<>();
-    
+
     final Set< ModelType > modelTypes = new HashSet<>();
     final LibraryClassLoader libraryClassLoader = new LibraryClassLoader();
     final Map< String, String > potentialSequencerClassNamesByCategory = new HashMap<>();
     final Path library;
     final Map< String, DependencyProcessor > dependencyProcessorsByModelTypeName = new HashMap< String, DependencyProcessor >();
-    
+
     ModelTypeManagerImpl( final Manager manager ) throws ModelerException {
         this.manager = manager;
         try {
@@ -108,7 +108,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         }
         library.toFile().deleteOnExit();
         manager.run( this, new SystemTask< Void >() {
-            
+
             @Override
             public Void run( final Session session,
                              final Node systemNode ) throws Exception {
@@ -164,11 +164,11 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             }
         } );
     }
-    
-    String archiveName( final String category ) {
+
+    String archiveName( final String category ) throws ModelerException {
         return "modeshape-sequencer-" + category + "-" + version() + "-module-with-dependencies.zip";
     }
-    
+
     /**
      * @param fileNode
      *        the file node
@@ -185,7 +185,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             if ( type.sourceFileExtensions().contains( ext ) ) return type;
         return modelTypes.isEmpty() ? null : modelTypes.iterator().next();
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -195,7 +195,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     public ModelType defaultModelType( final String filePath ) throws ModelerException {
         CheckArg.isNotEmpty( filePath, "filePath" );
         return manager.run( new Task< ModelType >() {
-            
+
             @Override
             public ModelType run( final Session session ) throws Exception {
                 final Node node = manager.artifactNode( session, filePath );
@@ -204,7 +204,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             }
         } );
     }
-    
+
     /**
      * @param modelNode
      *        the model node whose dependency processor is being requested (cannot be <code>null</code>)
@@ -214,27 +214,27 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      */
     public DependencyProcessor dependencyProcessor( final Node modelNode ) throws ModelerException {
         CheckArg.isNotNull( modelNode, "modelNode" );
-        
+
         try {
             boolean foundMixin = false;
-            
+
             for ( final NodeType mixin : modelNode.getMixinNodeTypes() ) {
                 if ( ModelerLexicon.MODEL_MIXIN.equals( mixin.getName() ) ) {
                     foundMixin = true;
                     break;
                 }
             }
-            
+
             if ( !foundMixin ) {
                 throw new ModelerException( ModelerI18n.mustBeModelNode, modelNode.getName() );
             }
-            
+
             return dependencyProcessorsByModelTypeName.get( modelNode.getPath() );
         } catch ( final Exception e ) {
             throw new ModelerException( e );
         }
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -248,7 +248,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             final String archiveName = archiveName( category );
             // Return if archive has already been installed
             if ( manager.run( this, new SystemTask< Boolean >() {
-                
+
                 @Override
                 public Boolean run( final Session session,
                                     final Node systemNode ) throws Exception {
@@ -299,7 +299,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                             continue;
                         }
                         manager.run( this, new SystemTask< Void >() {
-                            
+
                             @Override
                             public Void run( final Session session,
                                              final Node systemNode ) throws Exception {
@@ -348,7 +348,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                                 final ModelTypeImpl type = new ModelTypeImpl( manager, category, name, sequencerClass );
                                 modelTypes.add( type );
                                 manager.run( this, new SystemTask< Void >() {
-                                    
+
                                     @Override
                                     public Void run( final Session session,
                                                      final Node systemNode ) throws Exception {
@@ -367,7 +367,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                 }
                 archivePath.toFile().delete();
                 manager.run( this, new SystemTask< Void >() {
-                    
+
                     @Override
                     public Void run( final Session session,
                                      final Node systemNode ) throws Exception {
@@ -393,7 +393,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         }
         throw new IllegalArgumentException( ModelerI18n.unableToFindModelTypeCategory.text( category ) );
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -416,7 +416,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         }
         return categories;
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -429,7 +429,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             if ( name.equals( type.name() ) ) return type;
         return null;
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -442,7 +442,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             categories.add( type.category() );
         return categories;
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -452,7 +452,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     public List< URL > modelTypeRepositories() {
         return Collections.unmodifiableList( modelTypeRepositories );
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -462,7 +462,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     public Set< ModelType > modelTypes() {
         return Collections.unmodifiableSet( modelTypes );
     }
-    
+
     /**
      * @param fileNode
      *        the file node
@@ -479,7 +479,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                 applicableModelTypes.add( type );
         return applicableModelTypes;
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -489,14 +489,14 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     public Set< ModelType > modelTypesForArtifact( final String filePath ) throws ModelerException {
         CheckArg.isNotEmpty( filePath, "filePath" );
         return manager.run( new Task< Set< ModelType > >() {
-            
+
             @Override
             public final Set< ModelType > run( final Session session ) throws Exception {
                 return modelTypes( manager.artifactNode( session, filePath ) );
             }
         } );
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -510,7 +510,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             if ( category.equals( type.category() ) ) types.add( type );
         return types;
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -526,7 +526,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         saveModelTypeRepositories();
         return modelTypeRepositories();
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -542,14 +542,14 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         saveModelTypeRepositories();
         return modelTypeRepositories();
     }
-    
+
     private String path( final String prefix,
                          final String suffix ) {
         if ( prefix.charAt( prefix.length() - 1 ) == '/' )
             return suffix.charAt( 0 ) == '/' ? prefix + suffix.substring( 1 ) : prefix + suffix;
         return suffix.charAt( 0 ) == '/' ? prefix + suffix : prefix + '/' + suffix;
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -564,10 +564,10 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         }
         return modelTypeRepositories();
     }
-    
+
     private void saveModelTypeRepositories() throws ModelerException {
         manager.run( this, new SystemTask< Void >() {
-            
+
             @Override
             public Void run( final Session session,
                              final Node systemNode ) throws Exception {
@@ -581,7 +581,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             }
         } );
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -593,7 +593,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         for ( final Iterator< ModelType > iter = modelTypes.iterator(); iter.hasNext(); )
             if ( category.equals( iter.next().category() ) ) iter.remove();
         manager.run( this, new SystemTask< Void >() {
-            
+
             @Override
             public Void run( final Session session,
                              final Node systemNode ) throws Exception {
@@ -626,7 +626,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             }
         } );
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -641,17 +641,17 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         if ( modelTypeRepositories.remove( repositoryUrl ) ) saveModelTypeRepositories();
         return modelTypeRepositories();
     }
-    
-    private String version() {
-        return manager.repository.getDescriptor( Repository.REP_VERSION_DESC );
+
+    private String version() throws ModelerException {
+        return manager.repository().getDescriptor( Repository.REP_VERSION_DESC );
     }
-    
+
     class LibraryClassLoader extends URLClassLoader {
-        
+
         LibraryClassLoader() {
             super( EMPTY_URLS, LibraryClassLoader.class.getClassLoader() );
         }
-        
+
         @Override
         protected void addURL( final URL url ) {
             super.addURL( url );
