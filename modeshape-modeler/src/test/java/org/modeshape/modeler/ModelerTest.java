@@ -27,9 +27,11 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
 
@@ -57,6 +59,36 @@ public final class ModelerTest extends BaseTest {
 
     @Mock
     private ModelType modelType;
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToExportIfFileNull() throws Exception {
+        failingModeler.export( mock( Model.class ), ( File ) null );
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToExportIfStreamNull() throws Exception {
+        failingModeler.export( mock( Model.class ), ( OutputStream ) null );
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToExportIfUrlNull() throws Exception {
+        failingModeler.export( mock( Model.class ), ( URL ) null );
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToExportToFileIfModelNull() throws Exception {
+        failingModeler.export( null, mock( File.class ) );
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToExportToStreamIfModelNull() throws Exception {
+        failingModeler.export( null, mock( OutputStream.class ) );
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToExportToUrlIfModelNull() throws Exception {
+        failingModeler.export( null, new URL( "file:" ) );
+    }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGenerateDefaultModelIfArtifactPathEmpty() throws Exception {

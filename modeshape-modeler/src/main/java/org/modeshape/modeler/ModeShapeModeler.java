@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Calendar;
@@ -98,6 +99,53 @@ public final class ModeShapeModeler implements Modeler {
     @Override
     public void close() throws ModelerException {
         manager.close();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see Modeler#export(Model, File)
+     */
+    @Override
+    public void export( final Model model,
+                        final File file ) throws ModelerException {
+        CheckArg.isNotNull( model, "model" );
+        CheckArg.isNotNull( file, "file" );
+        try {
+            export( model, file.toURI().toURL() );
+        } catch ( final MalformedURLException e ) {
+            throw new ModelerException( e );
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see Modeler#export(Model, OutputStream)
+     */
+    @Override
+    public void export( final Model model,
+                        final OutputStream stream ) throws ModelerException {
+        CheckArg.isNotNull( model, "model" );
+        CheckArg.isNotNull( stream, "stream" );
+        ( ( ModelTypeImpl ) model.modelType() ).desequencer().execute( model );
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see Modeler#export(Model, URL)
+     */
+    @Override
+    public void export( final Model model,
+                        final URL url ) throws ModelerException {
+        CheckArg.isNotNull( model, "model" );
+        CheckArg.isNotNull( url, "url" );
+        try ( OutputStream stream = url.openConnection().getOutputStream() ) {
+            export( model, stream );
+        } catch ( final IOException e ) {
+            throw new ModelerException( e );
+        }
     }
 
     /**
