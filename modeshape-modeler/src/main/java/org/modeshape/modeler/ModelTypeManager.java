@@ -24,25 +24,22 @@
 package org.modeshape.modeler;
 
 import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 
 /**
  * 
  */
 public interface ModelTypeManager {
-    
+
     /**
      * 
      */
     String JBOSS_MODEL_TYPE_REPOSITORY = "https://repository.jboss.org/nexus/content/groups/public-jboss";
-    
+
     /**
      * 
      */
     String MAVEN_MODEL_TYPE_REPOSITORY = "http://repo1.maven.org/maven2";
-    
+
     /**
      * @param artifactPath
      *        the repository path to an artifact
@@ -51,7 +48,7 @@ public interface ModelTypeManager {
      *         if any problem occurs
      */
     ModelType defaultModelType( final String artifactPath ) throws ModelerException;
-    
+
     /**
      * @param category
      *        the name of an {@link #installableModelTypeCategories() installable model type category} from an on-line <a
@@ -61,40 +58,40 @@ public interface ModelTypeManager {
      * @throws ModelerException
      *         if any problem occurs
      */
-    Collection< String > install( final String category ) throws ModelerException;
-    
+    String[] install( final String category ) throws ModelerException;
+
     /**
      * @return the installable {@link ModelType model type} categories from the {@link #modelTypeRepositories() registered
      *         repositories}
      * @throws ModelerException
      *         if any problem occurs
      */
-    Set< String > installableModelTypeCategories() throws ModelerException;
-    
+    String[] installableModelTypeCategories() throws ModelerException;
+
     /**
      * @param name
      *        a name of a model type
      * @return the model type with the supplied name, or <code>null</code> if none exists.
      */
     ModelType modelType( String name );
-    
+
     /**
      * @return the installed model type categories; never <code>null</code>.
      */
-    Set< String > modelTypeCategories();
-    
+    String[] modelTypeCategories();
+
     /**
      * @return the {@link #registerModelTypeRepository(URL) registered} <a href="http://maven.apache.org">Maven</a> model type
      *         repository URLs, ordered by how they will searched when {@link #installableModelTypeCategories() retrieving} or
      *         {@link #install(String) installing} model type categories
      */
-    List< URL > modelTypeRepositories();
-    
+    URL[] modelTypeRepositories();
+
     /**
      * @return the available model types
      */
-    Set< ModelType > modelTypes();
-    
+    ModelType[] modelTypes();
+
     /**
      * @param artifactPath
      *        the repository path to an artifact
@@ -102,15 +99,15 @@ public interface ModelTypeManager {
      * @throws ModelerException
      *         if any problem occurs
      */
-    Set< ModelType > modelTypesForArtifact( final String artifactPath ) throws ModelerException;
-    
+    ModelType[] modelTypesForArtifact( final String artifactPath ) throws ModelerException;
+
     /**
      * @param category
      *        an {@link #modelTypeCategories() installed model type category}
      * @return the available model types for the supplied category
      */
-    Set< ModelType > modelTypesForCategory( String category );
-    
+    ModelType[] modelTypesForCategory( String category );
+
     /**
      * @param repositoryUrl
      *        a URL to an on-line <a href="http://maven.apache.org">Maven</a> {@link #modelTypeRepositories() model type repository}
@@ -120,8 +117,8 @@ public interface ModelTypeManager {
      * @throws ModelerException
      *         if any error occurs
      */
-    List< URL > moveModelTypeRepositoryDown( final URL repositoryUrl ) throws ModelerException;
-    
+    URL[] moveModelTypeRepositoryDown( final URL repositoryUrl ) throws ModelerException;
+
     /**
      * @param repositoryUrl
      *        a URL to an on-line <a href="http://maven.apache.org">Maven</a> {@link #modelTypeRepositories() model type repository}
@@ -131,8 +128,8 @@ public interface ModelTypeManager {
      * @throws ModelerException
      *         if any error occurs
      */
-    List< URL > moveModelTypeRepositoryUp( final URL repositoryUrl ) throws ModelerException;
-    
+    URL[] moveModelTypeRepositoryUp( final URL repositoryUrl ) throws ModelerException;
+
     /**
      * @param repositoryUrl
      *        a URL to an on-line <a href="http://maven.apache.org">Maven</a> {@link #modelTypeRepositories() model type repository}
@@ -142,8 +139,8 @@ public interface ModelTypeManager {
      * @throws ModelerException
      *         if any error occurs
      */
-    List< URL > registerModelTypeRepository( final URL repositoryUrl ) throws ModelerException;
-    
+    URL[] registerModelTypeRepository( final URL repositoryUrl ) throws ModelerException;
+
     /**
      * @param category
      *        the name of an {@link #installableModelTypeCategories() installed model type category}
@@ -151,7 +148,7 @@ public interface ModelTypeManager {
      *         if any problem occurs
      */
     void uninstall( final String category ) throws ModelerException;
-    
+
     /**
      * @param repositoryUrl
      *        a URL to an on-line <a href="http://maven.apache.org">Maven</a> {@link #modelTypeRepositories() model type repository}
@@ -161,5 +158,5 @@ public interface ModelTypeManager {
      * @throws ModelerException
      *         if any error occurs
      */
-    List< URL > unregisterModelTypeRepository( final URL repositoryUrl ) throws ModelerException;
+    URL[] unregisterModelTypeRepository( final URL repositoryUrl ) throws ModelerException;
 }

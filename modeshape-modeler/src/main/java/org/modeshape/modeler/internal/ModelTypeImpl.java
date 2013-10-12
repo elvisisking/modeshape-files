@@ -35,28 +35,32 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.ModelerException;
+import org.modeshape.modeler.extensions.Desequencer;
 
 /**
  * 
  */
 public final class ModelTypeImpl implements ModelType {
-    
+
     private final Manager manager;
     final Class< ? > sequencerClass;
+    final Class< ? > desequencerClass;
     private final String category;
     private final String name;
     private final Set< String > sourceFileExtensions = new HashSet<>();
-    
+
     ModelTypeImpl( final Manager manager,
                    final String category,
                    final String name,
-                   final Class< ? > sequencerClass ) {
+                   final Class< ? > sequencerClass,
+                   final Class< ? > desequencerClass ) {
         this.manager = manager;
         this.category = category;
         this.name = name;
         this.sequencerClass = sequencerClass;
+        this.desequencerClass = desequencerClass;
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -66,7 +70,29 @@ public final class ModelTypeImpl implements ModelType {
     public String category() {
         return category;
     }
-    
+
+    /**
+     * @return this model type's desequencer
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    public Desequencer desequencer() throws ModelerException {
+        return manager.run( new Task< Desequencer >() {
+
+            @Override
+            public Desequencer run( final Session session ) throws Exception {
+                final Desequencer desequencer = ( Desequencer ) desequencerClass.newInstance();
+                // Initialize
+                ReflectionUtil.setValue( desequencer, "logger", ExtensionLogger.getLogger( desequencer.getClass() ) );
+                ReflectionUtil.setValue( desequencer,
+                                         "repositoryName",
+                                         session.getRepository().getDescriptor( Repository.REPOSITORY_NAME ) );
+                ReflectionUtil.setValue( desequencer, "name", desequencer.getClass().getSimpleName() );
+                return desequencer;
+            }
+        } );
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -76,7 +102,7 @@ public final class ModelTypeImpl implements ModelType {
     public String name() {
         return name;
     }
-    
+
     /**
      * @return this model type's sequencer
      * @throws ModelerException
@@ -84,7 +110,7 @@ public final class ModelTypeImpl implements ModelType {
      */
     public Sequencer sequencer() throws ModelerException {
         return manager.run( new Task< Sequencer >() {
-            
+
             @Override
             public Sequencer run( final Session session ) throws Exception {
                 final Sequencer sequencer = ( Sequencer ) sequencerClass.newInstance();
@@ -99,17 +125,17 @@ public final class ModelTypeImpl implements ModelType {
             }
         } );
     }
-    
+
     /**
      * {@inheritDoc}
      * 
      * @see org.modeshape.modeler.ModelType#sourceFileExtensions()
      */
     @Override
-    public Set< String > sourceFileExtensions() {
-        return sourceFileExtensions;
+    public String[] sourceFileExtensions() {
+        return sourceFileExtensions.toArray( new String[ sourceFileExtensions.size() ] );
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -117,6 +143,6 @@ public final class ModelTypeImpl implements ModelType {
      */
     @Override
     public String toString() {
-        return name + " [" + category + ']';
+        return name + " [ category = " + category + ']';
     }
 }

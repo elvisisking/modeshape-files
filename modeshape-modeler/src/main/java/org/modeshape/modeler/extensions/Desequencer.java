@@ -21,25 +21,18 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.modeler;
+package org.modeshape.modeler.extensions;
+
+import org.modeshape.modeler.Model;
 
 /**
  * 
  */
-public interface ModelType {
+public interface Desequencer {
 
     /**
-     * @return the category of this model type
+     * @param model
+     *        a model
      */
-    String category();
-
-    /**
-     * @return the name of this model type
-     */
-    String name();
-
-    /**
-     * @return the source file extensions associated with this model type
-     */
-    String[] sourceFileExtensions();
+    void execute( Model model );
 }

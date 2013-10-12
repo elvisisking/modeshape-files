@@ -28,6 +28,9 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
+import java.io.File;
+import java.net.URL;
+
 import javax.jcr.Session;
 
 import org.junit.Test;
@@ -41,7 +44,44 @@ public class ITModeler extends BaseIntegrationTest {
     private static final String XSD_MODEL_TYPE_NAME = "org.modeshape.modeler.xsd.Xsd";
 
     @Test
-    public void shouldCreateModelOfSuppliedType() throws Exception {
+    public void shouldExportToFile() throws Exception {
+        for ( final URL url : modelTypeManager().modelTypeRepositories() )
+            modelTypeManager().unregisterModelTypeRepository( url );
+        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        assertThat( modelTypeManager().install( "java" ).length == 0, is( true ) );
+        final String name = ModelImpl.class.getName();
+        final File file = new File( "src/main/java/" + name.replace( '.', '/' ) + ".java" );
+        assertThat( file.exists(), is( true ) );
+        final ModelType modelType = modelTypeManager().modelType( "org.modeshape.modeler.java.JavaFile" );
+        assertThat( modelType, notNullValue() );
+        final Model model = modeler().generateModel( file, name + ".java", modelType );
+        assertThat( model, notNullValue() );
+        // TODO complete when issue #7 is closed
+    }
+
+    @Test( expected = ModelerException.class )
+    public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
+        for ( final URL url : modelTypeManager().modelTypeRepositories() )
+            modelTypeManager().unregisterModelTypeRepository( url );
+        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        modelTypeManager().install( "xml" );
+        modeler().generateModel( importArtifact( "stuff" ), ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
+    }
+
+    @Test( expected = ModelerException.class )
+    public void shouldFailToGenerateModelIfFileIsInvalid() throws Exception {
+        for ( final URL url : modelTypeManager().modelTypeRepositories() )
+            modelTypeManager().unregisterModelTypeRepository( url );
+        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        modelTypeManager().install( "xml" );
+        modeler().generateModel( importArtifact( XML_DECLARATION + "<stuff>" ),
+                                 ARTIFACT_NAME,
+                                 modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
+    }
+
+    @Test
+    public void shouldGenerateModelOfSuppliedType() throws Exception {
+        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
         modelTypeManager().install( "sramp" );
         modelTypeManager().install( "xsd" );
@@ -65,22 +105,9 @@ public class ITModeler extends BaseIntegrationTest {
         } );
     }
 
-    @Test( expected = ModelerException.class )
-    public void shouldFailToCreateModelIfFileIsInvalid() throws Exception {
-        modelTypeManager().install( "xml" );
-        modeler().generateModel( importArtifact( XML_DECLARATION + "<stuff>" ),
-                                 ARTIFACT_NAME,
-                                 modelTypeManager().modelTypes().iterator().next() );
-    }
-
-    @Test( expected = ModelerException.class )
-    public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
-        modelTypeManager().install( "xml" );
-        modeler().generateModel( importArtifact( "stuff" ), ARTIFACT_NAME, modelTypeManager().modelTypes().iterator().next() );
-    }
-
     @Test
     public void shouldNotFindDependencyProcessorForXsdModelNode() throws Exception {
+        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "sramp" );
         modelTypeManager().install( "xsd" );
 
@@ -107,5 +134,4 @@ public class ITModeler extends BaseIntegrationTest {
             }
         } );
     }
-
 }

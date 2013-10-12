@@ -29,8 +29,6 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.net.URL;
-import java.util.Collection;
-import java.util.Set;
 
 import javax.jcr.Node;
 import javax.jcr.Session;
@@ -77,43 +75,43 @@ public class ITModelTypeManager extends BaseIntegrationTest {
     public void shouldGetApplicableModelTypeManager() throws Exception {
         modelTypeManager().install( "sramp" );
         modelTypeManager().install( "xsd" );
-        final Set< ModelType > types = modelTypeManager().modelTypesForArtifact( importArtifact( XSD_ARTIFACT ) );
+        final ModelType[] types = modelTypeManager().modelTypesForArtifact( importArtifact( XSD_ARTIFACT ) );
         assertThat( types, notNullValue() );
-        assertThat( types.isEmpty(), is( false ) );
+        assertThat( types.length == 0, is( false ) );
     }
 
     @Test
     public void shouldGetModelTypeCategories() throws Exception {
-        assertThat( modelTypeManager().installableModelTypeCategories().isEmpty(), is( false ) );
+        assertThat( modelTypeManager().installableModelTypeCategories().length == 0, is( false ) );
     }
 
     @Test
     public void shouldIniitializeModelTypeRepositories() throws Exception {
-        assertThat( modelTypeManager().modelTypeRepositories().contains( new URL( ModelTypeManager.JBOSS_MODEL_TYPE_REPOSITORY ) ), is( true ) );
-        assertThat( modelTypeManager().modelTypeRepositories().contains( new URL( ModelTypeManager.MAVEN_MODEL_TYPE_REPOSITORY ) ), is( true ) );
+        assertThat( modelTypeManager().modelTypeRepositories()[ 0 ], is( new URL( ModelTypeManager.JBOSS_MODEL_TYPE_REPOSITORY ) ) );
+        assertThat( modelTypeManager().modelTypeRepositories()[ 1 ], is( new URL( ModelTypeManager.MAVEN_MODEL_TYPE_REPOSITORY ) ) );
     }
 
     @Test
     public void shouldInstallModelTypes() throws Exception {
-        final Collection< String > potentialSequencerClassNames = modelTypeManager().install( "java" );
-        assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
-        assertThat( modelTypeManager().modelTypes().isEmpty(), is( false ) );
+        final String[] potentialSequencerClassNames = modelTypeManager().install( "java" );
+        assertThat( potentialSequencerClassNames.length == 0, is( true ) );
+        assertThat( modelTypeManager().modelTypes().length == 0, is( false ) );
     }
 
     @Test
     public void shouldOnlyInstallModelTypeCategoryOnce() throws Exception {
         modelTypeManager().install( "java" );
-        assertThat( modelTypeManager().modelTypes().isEmpty(), is( false ) );
-        final int size = modelTypeManager().modelTypes().size();
+        assertThat( modelTypeManager().modelTypes().length == 0, is( false ) );
+        final int size = modelTypeManager().modelTypes().length;
         modelTypeManager().install( "java" );
-        assertThat( modelTypeManager().modelTypes().size(), is( size ) );
+        assertThat( modelTypeManager().modelTypes().length, is( size ) );
     }
 
     @Test
     public void shouldReturnUninstantiablePotentialSequencerClassNames() throws Exception {
-        Collection< String > potentialSequencerClassNames = modelTypeManager().install( "xsd" );
-        assertThat( potentialSequencerClassNames.isEmpty(), is( false ) );
+        String[] potentialSequencerClassNames = modelTypeManager().install( "xsd" );
+        assertThat( potentialSequencerClassNames.length == 0, is( false ) );
         potentialSequencerClassNames = modelTypeManager().install( "sramp" );
-        assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
+        assertThat( potentialSequencerClassNames.length == 0, is( true ) );
     }
 }

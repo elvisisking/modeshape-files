@@ -25,6 +25,7 @@ package org.modeshape.modeler;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 
 /**
@@ -35,7 +36,40 @@ public interface Modeler extends AutoCloseable {
     /**
      * The path to the default ModeShape configuration, which uses a file-based repository
      */
-    public static final String DEFAULT_MODESHAPE_CONFIGURATION_PATH = "jcr/modeShapeConfig.json";
+    String DEFAULT_MODESHAPE_CONFIGURATION_PATH = "jcr/modeShapeConfig.json";
+
+    /**
+     * @param model
+     *        a workspace model
+     * @param file
+     *        a file to which the supplied model should be exported
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    void export( Model model,
+                 File file ) throws ModelerException;
+
+    /**
+     * @param model
+     *        a workspace model
+     * @param stream
+     *        an output stream to which the supplied model should be exported
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    void export( Model model,
+                 OutputStream stream ) throws ModelerException;
+
+    /**
+     * @param model
+     *        a workspace model
+     * @param url
+     *        a URL to which the supplied model should be exported
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    void export( Model model,
+                 URL url ) throws ModelerException;
 
     /**
      * @param artifactPath

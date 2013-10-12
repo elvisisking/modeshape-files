@@ -31,13 +31,11 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -73,6 +71,8 @@ import org.polyglotter.common.Logger;
  */
 public final class ModelTypeManagerImpl implements ModelTypeManager {
 
+    static final Logger LOGGER = Logger.getLogger( ModelTypeManagerImpl.class );
+
     private static final String MODEL_TYPE_REPOSITORIES = "modelTypeRepositories";
     static final String ZIPS = "zips";
     static final String JARS = "jars";
@@ -81,13 +81,10 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     private static final String SEQUENCER_CLASS = "sequencerClass";
     private static final String POTENTIAL_SEQUENCER_CLASS_NAMES = "potentialSequencerClassNamesByCategory";
 
-    static final Logger LOGGER = Logger.getLogger( ModelTypeManagerImpl.class );
-
     /**
      * 
      */
     public static final String MODESHAPE_GROUP = "org/modeshape";
-    static final URL[] EMPTY_URLS = new URL[ 0 ];
 
     final Manager manager;
 
@@ -149,7 +146,8 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                     modelTypes.add( new ModelTypeImpl( manager,
                                                        node.getProperty( CATEGORY ).getString(),
                                                        node.getName(),
-                                                       libraryClassLoader.loadClass( node.getProperty( SEQUENCER_CLASS ).getString() ) ) );
+                                                       libraryClassLoader.loadClass( node.getProperty( SEQUENCER_CLASS ).getString() ),
+                                                       null ) );
                 }
                 // Load potential sequencer class names
                 if ( !systemNode.hasNode( POTENTIAL_SEQUENCER_CLASS_NAMES ) ) {
@@ -179,11 +177,12 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      *         if any problem occurs
      */
     public ModelType defaultModelType( final Node fileNode,
-                                       final Set< ModelType > modelTypes ) throws Exception {
+                                       final ModelType[] modelTypes ) throws Exception {
         final String ext = fileNode.getName().substring( fileNode.getName().lastIndexOf( '.' ) + 1 );
         for ( final ModelType type : modelTypes )
-            if ( type.sourceFileExtensions().contains( ext ) ) return type;
-        return modelTypes.isEmpty() ? null : modelTypes.iterator().next();
+            for ( final String typeExt : type.sourceFileExtensions() )
+                if ( typeExt.equals( ext ) ) return type;
+        return modelTypes.length == 0 ? null : modelTypes[ 0 ];
     }
 
     /**
@@ -241,7 +240,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @see org.modeshape.modeler.ModelTypeManager#install(java.lang.String)
      */
     @Override
-    public Collection< String > install( final String category ) throws ModelerException {
+    public String[] install( final String category ) throws ModelerException {
         CheckArg.isNotEmpty( category, "category" );
         LOGGER.debug( "Installing model types from category %s", category );
         try {
@@ -260,7 +259,10 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                             }
                     return false;
                 }
-            } ) ) return Collections.unmodifiableCollection( potentialSequencerClassNamesByCategory.values() );
+            } ) ) {
+                final Collection< String > vals = potentialSequencerClassNamesByCategory.values();
+                return vals.toArray( new String[ vals.size() ] );
+            }
             final Path archivePath = library.resolve( archiveName );
             final String sequencerArchivePath =
                 MODESHAPE_GROUP + "/modeshape-sequencer-" + category + '/' + version() + '/' + archiveName;
@@ -291,7 +293,10 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                         final ZipEntry archiveEntry = archiveIter.nextElement();
                         if ( archiveEntry.isDirectory() ) continue;
                         String name = archiveEntry.getName().toLowerCase();
-                        if ( name.contains( "test" ) || name.contains( "source" ) || !name.endsWith( ".jar" ) ) continue;
+                        if ( !name.endsWith( ".jar" ) || name.endsWith( "-tests.jar" ) || name.endsWith( "-sources.jar" ) ) {
+                            LOGGER.debug( "Ignoring Jar: %s", name );
+                            continue;
+                        }
                         final Path jarPath =
                             library.resolve( archiveEntry.getName().substring( archiveEntry.getName().lastIndexOf( '/' ) + 1 ) );
                         if ( jarPath.toFile().exists() ) {
@@ -345,7 +350,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                                     ModeShapeModeler.class.getPackage().getName() + '.' + category + '.' + sequencerClass.getSimpleName();
                                 name =
                                     name.endsWith( "Sequencer" ) ? name.substring( 0, name.length() - "Sequencer".length() ) : name;
-                                final ModelTypeImpl type = new ModelTypeImpl( manager, category, name, sequencerClass );
+                                final ModelTypeImpl type = new ModelTypeImpl( manager, category, name, sequencerClass, null );
                                 modelTypes.add( type );
                                 manager.run( this, new SystemTask< Void >() {
 
@@ -386,7 +391,8 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                         return null;
                     }
                 } );
-                return Collections.unmodifiableCollection( potentialSequencerClassNamesByCategory.values() );
+                final Collection< String > vals = potentialSequencerClassNamesByCategory.values();
+                return vals.toArray( new String[ vals.size() ] );
             }
         } catch ( final IOException e ) {
             throw new ModelerException( e );
@@ -400,7 +406,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @see org.modeshape.modeler.ModelTypeManager#installableModelTypeCategories()
      */
     @Override
-    public Set< String > installableModelTypeCategories() throws ModelerException {
+    public String[] installableModelTypeCategories() throws ModelerException {
         final Set< String > categories = new HashSet<>();
         for ( final URL repositoryUrl : modelTypeRepositories ) {
             try {
@@ -414,7 +420,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                 throw new ModelerException( e );
             }
         }
-        return categories;
+        return categories.toArray( new String[ categories.size() ] );
     }
 
     /**
@@ -436,11 +442,11 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @see org.modeshape.modeler.ModelTypeManager#modelTypeCategories()
      */
     @Override
-    public Set< String > modelTypeCategories() {
+    public String[] modelTypeCategories() {
         final Set< String > categories = new HashSet<>();
         for ( final ModelType type : modelTypes )
             categories.add( type.category() );
-        return categories;
+        return categories.toArray( new String[ categories.size() ] );
     }
 
     /**
@@ -449,8 +455,8 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @see org.modeshape.modeler.ModelTypeManager#modelTypeRepositories()
      */
     @Override
-    public List< URL > modelTypeRepositories() {
-        return Collections.unmodifiableList( modelTypeRepositories );
+    public URL[] modelTypeRepositories() {
+        return modelTypeRepositories.toArray( new URL[ modelTypeRepositories.size() ] );
     }
 
     /**
@@ -459,8 +465,8 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @see org.modeshape.modeler.ModelTypeManager#modelTypes()
      */
     @Override
-    public Set< ModelType > modelTypes() {
-        return Collections.unmodifiableSet( modelTypes );
+    public ModelType[] modelTypes() {
+        return modelTypes.toArray( new ModelType[ modelTypes.size() ] );
     }
 
     /**
@@ -470,14 +476,14 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @throws Exception
      *         if any problem occurs
      */
-    public Set< ModelType > modelTypes( final Node fileNode ) throws Exception {
+    public ModelType[] modelTypes( final Node fileNode ) throws Exception {
         final Set< ModelType > applicableModelTypes = new HashSet<>();
         for ( final ModelType type : modelTypes() )
             if ( ( ( ModelTypeImpl ) type ).sequencer()
                                            .isAccepted( fileNode.getNode( JcrLexicon.CONTENT.getString() )
                                                                 .getProperty( JcrLexicon.MIMETYPE.getString() ).getString() ) )
                 applicableModelTypes.add( type );
-        return applicableModelTypes;
+        return applicableModelTypes.toArray( new ModelType[ applicableModelTypes.size() ] );
     }
 
     /**
@@ -486,12 +492,12 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @see org.modeshape.modeler.ModelTypeManager#modelTypesForArtifact(java.lang.String)
      */
     @Override
-    public Set< ModelType > modelTypesForArtifact( final String filePath ) throws ModelerException {
+    public ModelType[] modelTypesForArtifact( final String filePath ) throws ModelerException {
         CheckArg.isNotEmpty( filePath, "filePath" );
-        return manager.run( new Task< Set< ModelType > >() {
+        return manager.run( new Task< ModelType[] >() {
 
             @Override
-            public final Set< ModelType > run( final Session session ) throws Exception {
+            public final ModelType[] run( final Session session ) throws Exception {
                 return modelTypes( manager.artifactNode( session, filePath ) );
             }
         } );
@@ -503,12 +509,12 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @see org.modeshape.modeler.ModelTypeManager#modelTypesForCategory(java.lang.String)
      */
     @Override
-    public Set< ModelType > modelTypesForCategory( final String category ) {
+    public ModelType[] modelTypesForCategory( final String category ) {
         CheckArg.isNotEmpty( category, "category" );
         final Set< ModelType > types = new HashSet<>();
         for ( final ModelType type : modelTypes )
             if ( category.equals( type.category() ) ) types.add( type );
-        return types;
+        return types.toArray( new ModelType[ types.size() ] );
     }
 
     /**
@@ -517,7 +523,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @see org.modeshape.modeler.ModelTypeManager#moveModelTypeRepositoryDown(java.net.URL)
      */
     @Override
-    public List< URL > moveModelTypeRepositoryDown( final URL repositoryUrl ) throws ModelerException {
+    public URL[] moveModelTypeRepositoryDown( final URL repositoryUrl ) throws ModelerException {
         CheckArg.isNotNull( repositoryUrl, "repositoryUrl" );
         final int ndx = modelTypeRepositories.indexOf( repositoryUrl );
         if ( ndx < 0 ) throw new IllegalArgumentException( ModelerI18n.urlNotFound.text( repositoryUrl ) );
@@ -533,7 +539,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @see org.modeshape.modeler.ModelTypeManager#moveModelTypeRepositoryUp(java.net.URL)
      */
     @Override
-    public List< URL > moveModelTypeRepositoryUp( final URL repositoryUrl ) throws ModelerException {
+    public URL[] moveModelTypeRepositoryUp( final URL repositoryUrl ) throws ModelerException {
         CheckArg.isNotNull( repositoryUrl, "repositoryUrl" );
         final int ndx = modelTypeRepositories.indexOf( repositoryUrl );
         if ( ndx < 0 ) throw new IllegalArgumentException( ModelerI18n.urlNotFound.text( repositoryUrl ) );
@@ -556,7 +562,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @see org.modeshape.modeler.ModelTypeManager#registerModelTypeRepository(java.net.URL)
      */
     @Override
-    public List< URL > registerModelTypeRepository( final URL repositoryUrl ) throws ModelerException {
+    public URL[] registerModelTypeRepository( final URL repositoryUrl ) throws ModelerException {
         CheckArg.isNotNull( repositoryUrl, "repositoryUrl" );
         if ( !modelTypeRepositories.contains( repositoryUrl ) ) {
             modelTypeRepositories.addFirst( repositoryUrl );
@@ -636,7 +642,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @see org.modeshape.modeler.ModelTypeManager#unregisterModelTypeRepository(java.net.URL)
      */
     @Override
-    public List< URL > unregisterModelTypeRepository( final URL repositoryUrl ) throws ModelerException {
+    public URL[] unregisterModelTypeRepository( final URL repositoryUrl ) throws ModelerException {
         CheckArg.isNotNull( repositoryUrl, "repositoryUrl" );
         if ( modelTypeRepositories.remove( repositoryUrl ) ) saveModelTypeRepositories();
         return modelTypeRepositories();
@@ -649,7 +655,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     class LibraryClassLoader extends URLClassLoader {
 
         LibraryClassLoader() {
-            super( EMPTY_URLS, LibraryClassLoader.class.getClassLoader() );
+            super( new URL[ 0 ], LibraryClassLoader.class.getClassLoader() );
         }
 
         @Override
