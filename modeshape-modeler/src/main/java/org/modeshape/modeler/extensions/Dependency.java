@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.StringUtil;
 
 /**
  * A model dependency.
@@ -45,23 +46,65 @@ public class Dependency {
     /**
      * @param path
      *        the workspace full path of the dependency (can be <code>null</code> or empty)
+     * @param sourceReferences
+     *        the source document dependency references (cannot be <code>null</code> or empty)
      * @param exists
      *        <code>true</code> if the dependency exists in the workspace
      */
     public Dependency( final String path,
+                       final List< String > sourceReferences,
                        final boolean exists ) {
+        CheckArg.isNotEmpty( sourceReferences, "sourceReferences" );
+
         this.path = path;
         this.exists = exists;
-        this.sourceReferences = new ArrayList< String >( 5 );
+        this.sourceReferences = new ArrayList<>( sourceReferences );
     }
 
     /**
+     * @param path
+     *        the workspace full path of the dependency (can be <code>null</code> or empty)
      * @param sourceReference
-     *        the source reference being added (cannot be <code>null</code> or empty)
+     *        the source document dependency reference (cannot be <code>null</code> or empty)
+     * @param exists
+     *        <code>true</code> if the dependency exists in the workspace
      */
-    public void addSourceReference( final String sourceReference ) {
+    public Dependency( final String path,
+                       final String sourceReference,
+                       final boolean exists ) {
         CheckArg.isNotEmpty( sourceReference, "sourceReference" );
-        this.sourceReferences.add( sourceReference );
+
+        this.path = path;
+        this.exists = exists;
+        this.sourceReferences = Collections.singletonList( sourceReference );
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals( final Object obj ) {
+        if ( ( obj == null ) || !getClass().equals( obj.getClass() ) ) {
+            return false;
+        }
+
+        final Dependency that = ( Dependency ) obj;
+
+        if ( this.sourceReferences.equals( that.sourceReferences ) ) {
+            if ( this.path == null ) {
+                return ( that.path == null );
+            }
+
+            if ( that.path == null ) {
+                return false;
+            }
+
+            return this.path.equals( that.path );
+        }
+
+        return false;
     }
 
     /**
@@ -69,6 +112,22 @@ public class Dependency {
      */
     public boolean exists() {
         return this.exists;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        int hashCode = this.sourceReferences.hashCode();
+
+        if ( !StringUtil.isBlank( this.path ) ) {
+            hashCode = ( ( 31 * hashCode ) + this.path.hashCode() );
+        }
+
+        return hashCode;
     }
 
     /**

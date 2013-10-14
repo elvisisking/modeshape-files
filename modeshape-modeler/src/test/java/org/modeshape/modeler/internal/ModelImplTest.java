@@ -55,6 +55,7 @@ public class ModelImplTest extends BaseModelObjectImplTest {
                                final String dependencyWorkspacePath ) throws Exception {
         final Node dependencyNode = dependenciesNode.addNode( dependencyNodeName, ModelerLexicon.DEPENDENCY_NODE );
         dependencyNode.setProperty( ModelerLexicon.PATH_PROPERTY, dependencyWorkspacePath );
+        dependencyNode.setProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY, new String[] { "import" } ); // mandatory property
         return dependencyNode;
     }
 

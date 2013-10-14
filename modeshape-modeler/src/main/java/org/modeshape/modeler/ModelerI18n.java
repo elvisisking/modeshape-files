@@ -31,6 +31,8 @@ import org.polyglotter.common.I18n;
 @SuppressWarnings( "javadoc" )
 public final class ModelerI18n {
 
+    public static final I18n dependencyDoesNotHaveSourceReferences =
+        new I18n( "A dependency node exists for '%s' but has no source references" );
     public static final I18n modelerStarted = new I18n( "ModeShape Modeler started" );
     public static final I18n modelerStopped = new I18n( "ModeShape Modeler stopped" );
     public static final I18n mustBeModelNode = new I18n( "Node '%s' is not a model node" );

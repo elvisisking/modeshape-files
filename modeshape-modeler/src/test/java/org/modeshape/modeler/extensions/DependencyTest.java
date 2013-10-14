@@ -24,9 +24,10 @@
 package org.modeshape.modeler.extensions;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Test;
@@ -37,40 +38,45 @@ import org.junit.Test;
 @SuppressWarnings( "javadoc" )
 public class DependencyTest {
 
-    @Test
-    public void shouldAddSourceReference() {
-        final Dependency dep = new Dependency( "/my/path", false );
-        final String input = "input";
-        dep.addSourceReference( input );
-
-        final List< String > srcRefs = dep.sourceReferences();
-        assertThat( srcRefs.size(), is( 1 ) );
-        assertThat( srcRefs.get( 0 ), is( input ) );
-    }
+    private static final List< String > ONE_SRC_REF = Collections.singletonList( "import org.junit.Test;" );
 
     @SuppressWarnings( "unused" )
     @Test
     public void shouldAllowEmptyPath() {
-        new Dependency( "", false );
+        new Dependency( "", ONE_SRC_REF, false );
     }
 
     @SuppressWarnings( "unused" )
     @Test
     public void shouldAllowNullPath() {
-        new Dependency( null, false );
+        new Dependency( null, ONE_SRC_REF, false );
+    }
+
+    @Test
+    public void shouldBeEqualWhenSameSourceReferencesAndNullPaths() {
+        final Dependency depOne = new Dependency( null, ONE_SRC_REF, false );
+        final Dependency depTwo = new Dependency( depOne.path(), depOne.sourceReferences(), depOne.exists() );
+        assertThat( depOne.equals( depTwo ), is( true ) );
+    }
+
+    @Test
+    public void shouldBeEqualWhenSameSourceReferencesAndPath() {
+        final Dependency depOne = new Dependency( "/my/path", ONE_SRC_REF, false );
+        final Dependency depTwo = new Dependency( depOne.path(), depOne.sourceReferences(), depOne.exists() );
+        assertThat( depOne.equals( depTwo ), is( true ) );
     }
 
     @Test
     public void shouldHaveCorrectDependencyExists() {
         { // exists = true
             final boolean exists = true;
-            final Dependency dep = new Dependency( "/my/path", exists );
+            final Dependency dep = new Dependency( "/my/path", ONE_SRC_REF, exists );
             assertThat( dep.exists(), is( exists ) );
         }
 
         { // exists = false
             final boolean exists = false;
-            final Dependency dep = new Dependency( "/my/path", exists );
+            final Dependency dep = new Dependency( "/my/path", ONE_SRC_REF, exists );
             assertThat( dep.exists(), is( exists ) );
         }
     }
@@ -78,27 +84,53 @@ public class DependencyTest {
     @Test
     public void shouldHaveCorrectDependencyPath() {
         final String path = "/my/path";
-        final Dependency dep = new Dependency( path, false );
+        final Dependency dep = new Dependency( path, ONE_SRC_REF, false );
         assertThat( dep.path(), is( path ) );
     }
 
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowEmptySourceReference() {
-        final Dependency dep = new Dependency( "/my/path", false );
-        dep.addSourceReference( "" );
-    }
-
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNullSourceReference() {
-        final Dependency dep = new Dependency( "/my/path", false );
-        dep.addSourceReference( null );
+    @Test
+    public void shouldHaveCorrectSourceReferenceAfterConstruction() {
+        final String input = "import java.util.Collections;";
+        final Dependency dep = new Dependency( "/my/path", input, false );
+        assertThat( dep.sourceReferences().size(), is( 1 ) );
+        assertThat( dep.sourceReferences().get( 0 ), is( input ) );
     }
 
     @Test
-    public void shouldNotHaveSourceReferencesAfterConstruction() {
-        final Dependency dep = new Dependency( "/my/path", false );
-        assertThat( dep.sourceReferences(), is( notNullValue() ) );
-        assertThat( dep.sourceReferences().size(), is( 0 ) );
+    public void shouldHaveCorrectSourceReferencesAfterConstruction() {
+        final Dependency dep = new Dependency( "/my/path", ONE_SRC_REF, false );
+        assertThat( dep.sourceReferences(), is( ONE_SRC_REF ) );
+    }
+
+    @SuppressWarnings( "unused" )
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowEmptySourceReference() {
+        new Dependency( "/my/path", Collections.< String >emptyList(), false );
+    }
+
+    @SuppressWarnings( "unused" )
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowNullSourceReference() {
+        new Dependency( "/my/path", ( List< String > ) null, false );
+    }
+
+    @Test
+    public void shouldNotBeEqualWhenSamePathsDifferentSourceReferences() {
+        final Dependency depOne = new Dependency( "/my/path", ONE_SRC_REF, false );
+
+        final List< String > sourceRefs = new ArrayList<>();
+        sourceRefs.add( ONE_SRC_REF.get( 0 ) );
+        sourceRefs.add( "import java.util.List;" );
+
+        final Dependency depTwo = new Dependency( depOne.path(), sourceRefs, depOne.exists() );
+        assertThat( depOne.equals( depTwo ), is( false ) );
+    }
+
+    @Test
+    public void shouldNotBeEqualWhenSameSourceReferencesDifferentPaths() {
+        final Dependency depOne = new Dependency( "/my/path", ONE_SRC_REF, false );
+        final Dependency depTwo = new Dependency( depOne.path() + "different", depOne.sourceReferences(), depOne.exists() );
+        assertThat( depOne.equals( depTwo ), is( false ) );
     }
 
 }
