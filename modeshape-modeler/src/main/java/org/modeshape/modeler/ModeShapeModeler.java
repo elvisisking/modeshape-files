@@ -41,7 +41,7 @@ import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import org.modeshape.modeler.internal.DependencyProcessor;
+import org.modeshape.modeler.extensions.DependencyProcessor;
 import org.modeshape.modeler.internal.Manager;
 import org.modeshape.modeler.internal.ModelImpl;
 import org.modeshape.modeler.internal.ModelTypeImpl;
@@ -255,9 +255,10 @@ public final class ModeShapeModeler implements Modeler {
                                                                     } );
                 if ( save ) {
                     modelNode.setProperty( ModelerLexicon.MODEL_TYPE, modelType.name() );
-                    processDependencies( modelNode, modelType );
+                    final ModelImpl model = new ModelImpl( manager, modelNode.getPath() );
                     session.save();
-                    return new ModelImpl( manager, modelNode.getPath() );
+                    processDependencies( modelNode, model );
+                    return model;
                 }
                 throw new ModelerException( ModelerI18n.sessionNotSavedWhenCreatingModel, artifactPath );
             }
@@ -429,25 +430,18 @@ public final class ModeShapeModeler implements Modeler {
         return workspaceName;
     }
 
-    String processDependencies( final Node modelNode,
-                                final ModelType modelType ) throws ModelerException {
+    void processDependencies( final Node modelNode,
+                              final ModelImpl model ) throws Exception {
         CheckArg.isNotNull( modelNode, "modelNode" );
-        CheckArg.isNotNull( modelType, "modelType" );
+        CheckArg.isNotNull( model, "model" );
 
-        return manager.run( new Task< String >() {
+        final DependencyProcessor dependencyProcessor = model.dependencyProcessor();
 
-            @Override
-            public String run( final Session session ) throws Exception {
-                final DependencyProcessor dependencyProcessor = manager.modelTypeManager().dependencyProcessor( modelNode );
-
-                if ( dependencyProcessor == null ) {
-                    Logger.getLogger( getClass() ).debug( "No dependency processor found for model '" + modelNode.getName() + '\'' );
-                    return null;
-                }
-
-                return dependencyProcessor.process( modelNode, modelType, ModeShapeModeler.this );
-            }
-        } );
+        if ( dependencyProcessor == null ) {
+            Logger.getLogger( getClass() ).debug( "No dependency processor found for model '" + modelNode.getName() + '\'' );
+        } else {
+            dependencyProcessor.process( modelNode, this );
+        }
     }
 
     private void removeTemporaryArtifact( final String artifactPath ) throws ModelerException {

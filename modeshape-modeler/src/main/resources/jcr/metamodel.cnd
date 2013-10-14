@@ -33,7 +33,7 @@
   - mm:sourceReference (string) multiple
   - mm:path (string)
   
-[mm:dependencies]
+[mm:dependencies] > nt:unstructured
   + mm:dependency (mm:dependency) sns
 
 [mm:model] mixin

@@ -24,19 +24,43 @@
 package org.modeshape.modeler;
 
 import java.net.URL;
+import java.util.Collection;
+
+import org.modeshape.modeler.extensions.Dependency;
 
 /**
  * 
  */
 public interface Model extends ModelObject {
-    
+
+    /**
+     * @return <code>true</code> if all dependencies, recursively, exist in the repository.
+     * @throws ModelerException
+     *         if any error occurs
+     */
+    boolean allDependenciesExist() throws ModelerException;
+
+    /**
+     * @return the model's dependencies (never <code>null</code> but can be empty)
+     * @throws ModelerException
+     *         if any error occurs
+     */
+    Collection< Dependency > dependencies() throws ModelerException;
+
     /**
      * @return the (last) external location, e.g., on the file system, known to contain a materialized representation of this model.
      * @throws ModelerException
      *         if any error occurs
      */
     URL externalLocation() throws ModelerException;
-    
+
+    /**
+     * @return a collection of missing dependencies (never <code>null</code> but can be empty)
+     * @throws ModelerException
+     *         if any error occurs
+     */
+    Collection< Dependency > missingDependencies() throws ModelerException;
+
     /**
      * @return this model's type; never <code>null</code>.
      * @throws ModelerException

@@ -29,15 +29,34 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.net.URL;
+import java.util.Collection;
+
+import javax.jcr.Node;
+import javax.jcr.Session;
 
 import org.junit.Test;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.modeler.Model;
 import org.modeshape.modeler.ModelObject;
 import org.modeshape.modeler.ModelType;
+import org.modeshape.modeler.extensions.Dependency;
 
 @SuppressWarnings( "javadoc" )
 public class ModelImplTest extends BaseModelObjectImplTest {
+
+    Node createDependenciesNode( final Session session,
+                                 final Model model ) throws Exception {
+        final Node dependenciesNode = session.getNode( model.absolutePath() ).addNode( ModelerLexicon.DEPENDENCIES_NODE );
+        return dependenciesNode;
+    }
+
+    Node createDependencyNode( final Node dependenciesNode,
+                               final String dependencyNodeName,
+                               final String dependencyWorkspacePath ) throws Exception {
+        final Node dependencyNode = dependenciesNode.addNode( dependencyNodeName, ModelerLexicon.DEPENDENCY_NODE );
+        dependencyNode.setProperty( ModelerLexicon.PATH_PROPERTY, dependencyWorkspacePath );
+        return dependencyNode;
+    }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetStringValueIfMultiValuedProperty() throws Exception {
@@ -73,11 +92,13 @@ public class ModelImplTest extends BaseModelObjectImplTest {
 
     @Test
     public void shouldGetExternalLocation() throws Exception {
+        final String location = "file:src/test/resources/Books.xsd";
         modelTypeManager().install( XML_MODEL_TYPE_CATEGORY );
-        final Model model = modeler().generateModel( new URL( "file:src/test/resources/Books.xsd" ),
+        final Model model = modeler().generateModel( new URL( location ),
                                                      null,
                                                      modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
         assertThat( model, notNullValue() );
+        assertThat( model.stringValue( ModelerLexicon.EXTERNAL_LOCATION ), is( location ) );
     }
 
     @Test
@@ -177,4 +198,146 @@ public class ModelImplTest extends BaseModelObjectImplTest {
         assertThat( modelObject.propertyHasMultipleValues( JcrLexicon.MIXIN_TYPES.toString() ), is( true ) );
         assertThat( modelObject.propertyHasMultipleValues( "bogus" ), is( false ) );
     }
+
+    @Test
+    public void shouldNotObtainDependenciesWhenNoneExist() throws Exception {
+        final ModelImpl model = ( ModelImpl ) modelObject();
+        assertThat( model.dependencies(), is( notNullValue() ) );
+    }
+
+    @Test
+    public void shouldNotObtainMissingDependenciesWhenNoneExist() throws Exception {
+        final ModelImpl model = ( ModelImpl ) modelObject();
+        assertThat( model.missingDependencies(), is( notNullValue() ) );
+    }
+
+    @Test
+    public void shouldObtainDependencies() throws Exception {
+        manager().run( new Task< Void >() {
+
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final ModelImpl model = ( ModelImpl ) modelObject();
+
+                // setup
+                final Node dependenciesNode = createDependenciesNode( session, model );
+                final String depOneName = "/depOne"; // must start path at root
+                createDependencyNode( dependenciesNode, depOneName, depOneName );
+                final String depTwoName = "/depTwo"; // must start path at root
+                createDependencyNode( dependenciesNode, depTwoName, depTwoName );
+                session.save();
+
+                // test
+                final Collection< Dependency > dependencies = model.dependencies();
+                assertThat( dependencies.size(), is( 2 ) );
+
+                boolean foundOne = false;
+                boolean foundTwo = false;
+
+                for ( final Dependency dependency : dependencies ) {
+                    if ( dependency.path().equals( depOneName ) ) {
+                        foundOne = true;
+                        assertThat( dependency.exists(), is( false ) );
+                    } else if ( dependency.path().equals( depTwoName ) ) {
+                        foundTwo = true;
+                        assertThat( dependency.exists(), is( false ) );
+                    }
+                }
+
+                assertThat( ( foundOne && foundTwo ), is( true ) );
+
+                return null;
+            }
+        } );
+    }
+
+    @Test
+    public void shouldObtainMissingDependencies() throws Exception {
+        manager().run( new Task< Void >() {
+
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final ModelImpl model = ( ModelImpl ) modelObject();
+
+                // setup
+                final Node dependenciesNode = createDependenciesNode( session, model );
+                final String nodePath = "/myNode"; // path where a node does not exist
+                createDependencyNode( dependenciesNode, "mydependency", nodePath );
+                session.save();
+
+                // test
+                assertThat( model.missingDependencies().size(), is( 1 ) );
+                assertThat( model.missingDependencies().iterator().next().path(), is( nodePath ) );
+
+                return null;
+            }
+        } );
+    }
+
+    @Test
+    public void shouldVerifyDependenciesAllExist() throws Exception {
+        manager().run( new Task< Void >() {
+
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final ModelImpl model = ( ModelImpl ) modelObject();
+
+                // setup
+                final Node dependenciesNode = createDependenciesNode( session, model );
+                final Node node = session.getRootNode().addNode( "myNode" ); // create a node to use its path
+                createDependencyNode( dependenciesNode, "mydependency", node.getPath() );
+                session.save();
+
+                // test
+                assertThat( model.allDependenciesExist(), is( true ) );
+
+                return null;
+            }
+        } );
+    }
+
+    @Test
+    public void shouldVerifyDependenciesDoNotAllExist() throws Exception {
+        manager().run( new Task< Void >() {
+
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final ModelImpl model = ( ModelImpl ) modelObject();
+
+                // setup
+                final Node dependenciesNode = createDependenciesNode( session, model );
+                createDependencyNode( dependenciesNode, "mydependency", "/myNode" );
+                session.save();
+
+                // test
+                assertThat( model.allDependenciesExist(), is( false ) );
+
+                return null;
+            }
+        } );
+    }
+
+    @Test
+    public void shouldVerifyDependencyExists() throws Exception {
+        manager().run( new Task< Void >() {
+
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final ModelImpl model = ( ModelImpl ) modelObject();
+
+                // setup
+                final Node dependenciesNode = createDependenciesNode( session, model );
+                final Node node = session.getRootNode().addNode( "myNode" ); // create a node to use its path
+                createDependencyNode( dependenciesNode, "mydependency", node.getPath() );
+                session.save();
+
+                // test
+                assertThat( model.dependencies().size(), is( 1 ) );
+                assertThat( model.dependencies().iterator().next().exists(), is( true ) );
+
+                return null;
+            }
+        } );
+    }
+
 }
