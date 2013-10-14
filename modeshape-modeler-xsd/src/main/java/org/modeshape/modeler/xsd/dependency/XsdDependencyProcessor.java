@@ -129,7 +129,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                 return null; // no children of schema node so dependencies node not created
             }
 
-            pathsToMissingDependencies = new ArrayList< String >();
+            pathsToMissingDependencies = new ArrayList<>();
 
             // find the dependency nodes
             while ( itr.hasNext() ) {
@@ -207,7 +207,11 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                 return null;
             }
 
-            dependenciesNode.getSession().save();
+            // process any missing dependencies
+            if ( !pathsToMissingDependencies.isEmpty() ) {
+                uploadMissingDependencies( modelNode, pathsToMissingDependencies, modeler );
+            }
+
             return dependenciesNode.getPath();
         } catch ( final Exception e ) {
             throw new ModelerException( e );
@@ -236,18 +240,38 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
 
     void uploadMissingDependencies( final Node modelNode,
                                     final List< String > paths,
-                                    final Modeler modeler ) {
+                                    final Modeler modeler ) throws Exception {
+        assert ( modelNode != null );
         assert ( paths != null );
         assert ( modeler != null );
-        // TODO implement uploadMissingDependencies
 
-        // for ( final String path : paths ) {
-        // try {
-        // modeler.importArtifact( name, new URL( path ).openStream(), path );
-        // modeler.generateModel( path, modelType );
-        // } catch ( final Exception e ) {
-        // LOGGER.error( e, message, params );
-        // }
-        // }
+        if ( !modelNode.hasProperty( ModelerLexicon.EXTERNAL_LOCATION )
+             || !modelNode.hasProperty( ModelerLexicon.MODEL_TYPE )
+             || paths.isEmpty() ) {
+            return;
+        }
+
+        final String sourceName = modelNode.getParent().getName();
+        final String externalLocation = modelNode.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString();
+
+        for ( final String dependencyPath : paths ) {
+            final String extPath = externalLocation + dependencyPath;
+
+            try {
+                // upload
+                // TODO implement uploadMissingDependencies
+                // LOGGER.debug( "Importing XSD dependency from external path '%s' for source '%s'", extPath, sourceName );
+                // final String artifactPath = modeler.importArtifact( new URL( extPath ).openStream(), dependencyPath );
+                //
+                // // create model
+                // LOGGER.debug( "Generating model for XSD dependency of model '%s' from path '%s'", sourceName, extPath );
+                // final String type = modelNode.getSession().getNode( dependencyPath ).getProperty( ModelerLexicon.MODEL_TYPE
+                // ).getString();
+                // final ModelType modelType = modeler.modelTypeManager().modelType( type );
+                // modeler.generateModel( artifactPath, dependencyPath, modelType );
+            } catch ( final Exception e ) {
+                LOGGER.error( e, XsdModelerI18n.errorImportingXsdDependencyArtifact, extPath, sourceName );
+            }
+        }
     }
 }

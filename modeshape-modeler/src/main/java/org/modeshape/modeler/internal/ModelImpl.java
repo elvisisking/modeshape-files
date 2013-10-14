@@ -27,6 +27,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -34,10 +37,11 @@ import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 
-import org.jsoup.helper.StringUtil;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.modeler.Model;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.ModelerException;
+import org.modeshape.modeler.ModelerI18n;
 import org.modeshape.modeler.extensions.Dependency;
 import org.modeshape.modeler.extensions.DependencyProcessor;
 
@@ -46,9 +50,9 @@ import org.modeshape.modeler.extensions.DependencyProcessor;
  */
 public class ModelImpl extends ModelObjectImpl implements Model {
 
-    static final Collection< Dependency > NO_DEPENDENCIES = Collections.emptyList();
+    static final Set< Dependency > NO_DEPENDENCIES = Collections.emptySet();
 
-    private Collection< Dependency > dependencies;
+    private Set< Dependency > dependencies;
 
     /**
      * @param manager
@@ -77,40 +81,46 @@ public class ModelImpl extends ModelObjectImpl implements Model {
      * @see org.modeshape.modeler.Model#dependencies()
      */
     @Override
-    public Collection< Dependency > dependencies() throws ModelerException {
+    public Set< Dependency > dependencies() throws ModelerException {
         if ( this.dependencies == null ) {
-            this.dependencies = manager.run( new Task< Collection< Dependency > >() {
+            this.dependencies = manager.run( new Task< Set< Dependency > >() {
 
                 @Override
-                public Collection< Dependency > run( final Session session ) throws Exception {
+                public Set< Dependency > run( final Session session ) throws Exception {
                     final Node modelNode = session.getNode( absolutePath() );
 
                     if ( modelNode.hasNode( ModelerLexicon.DEPENDENCIES_NODE ) ) {
                         final NodeIterator itr = modelNode.getNode( ModelerLexicon.DEPENDENCIES_NODE ).getNodes();
-                        final Collection< Dependency > result = new ArrayList<>( ( int ) itr.getSize() );
+                        final Set< Dependency > result = new HashSet<>( ( int ) itr.getSize() );
 
                         while ( itr.hasNext() ) {
                             final Node dependencyNode = itr.nextNode();
-                            String dependencyPath = null;
-                            boolean exists = false;
 
-                            if ( dependencyNode.hasProperty( ModelerLexicon.PATH_PROPERTY ) ) {
-                                dependencyPath = dependencyNode.getProperty( ModelerLexicon.PATH_PROPERTY ).getString();
-                            }
-
-                            if ( !StringUtil.isBlank( dependencyPath ) ) {
-                                exists = session.nodeExists( dependencyPath );
-                            }
-
-                            final Dependency dependency = new Dependency( dependencyPath, exists );
-
+                            // must have source references
                             if ( dependencyNode.hasProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ) ) {
-                                for ( final Value value : dependencyNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues() ) {
-                                    dependency.addSourceReference( value.getString() );
-                                }
-                            }
+                                final Value[] values = dependencyNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues();
+                                final List< String > refs = new ArrayList<>( values.length );
 
-                            result.add( dependency );
+                                for ( final Value value : values ) {
+                                    refs.add( value.getString() );
+                                }
+
+                                String dependencyPath = null;
+                                boolean exists = false;
+
+                                if ( dependencyNode.hasProperty( ModelerLexicon.PATH_PROPERTY ) ) {
+                                    dependencyPath = dependencyNode.getProperty( ModelerLexicon.PATH_PROPERTY ).getString();
+                                }
+
+                                if ( !StringUtil.isBlank( dependencyPath ) ) {
+                                    exists = session.nodeExists( dependencyPath );
+                                }
+
+                                final Dependency dependency = new Dependency( dependencyPath, refs, exists );
+                                result.add( dependency );
+                            } else {
+                                throw new ModelerException( ModelerI18n.dependencyDoesNotHaveSourceReferences, absolutePath() );
+                            }
                         }
 
                         return result;
@@ -157,18 +167,18 @@ public class ModelImpl extends ModelObjectImpl implements Model {
      * @see org.modeshape.modeler.Model#missingDependencies()
      */
     @Override
-    public Collection< Dependency > missingDependencies() throws ModelerException {
-        return manager.run( new Task< Collection< Dependency > >() {
+    public Set< Dependency > missingDependencies() throws ModelerException {
+        return manager.run( new Task< Set< Dependency > >() {
 
             @Override
-            public Collection< Dependency > run( final Session session ) throws Exception {
-                final Collection< Dependency > dependencies = dependencies();
+            public Set< Dependency > run( final Session session ) throws Exception {
+                final Set< Dependency > dependencies = dependencies();
 
                 if ( dependencies.isEmpty() ) {
                     return NO_DEPENDENCIES;
                 }
 
-                final Collection< Dependency > missing = new ArrayList<>();
+                final Set< Dependency > missing = new HashSet<>();
 
                 for ( final Dependency dependency : dependencies ) {
                     final String path = dependency.path();

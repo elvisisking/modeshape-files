@@ -24,7 +24,7 @@
 package org.modeshape.modeler;
 
 import java.net.URL;
-import java.util.Collection;
+import java.util.Set;
 
 import org.modeshape.modeler.extensions.Dependency;
 
@@ -45,7 +45,7 @@ public interface Model extends ModelObject {
      * @throws ModelerException
      *         if any error occurs
      */
-    Collection< Dependency > dependencies() throws ModelerException;
+    Set< Dependency > dependencies() throws ModelerException;
 
     /**
      * @return the (last) external location, e.g., on the file system, known to contain a materialized representation of this model.
@@ -59,7 +59,7 @@ public interface Model extends ModelObject {
      * @throws ModelerException
      *         if any error occurs
      */
-    Collection< Dependency > missingDependencies() throws ModelerException;
+    Set< Dependency > missingDependencies() throws ModelerException;
 
     /**
      * @return this model's type; never <code>null</code>.
@@ -67,4 +67,5 @@ public interface Model extends ModelObject {
      *         if any error occurs
      */
     ModelType modelType() throws ModelerException;
+
 }

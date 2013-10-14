@@ -30,7 +30,7 @@
   + * (nt:base) = nt:unstructured sns version
 
 [mm:dependency] > nt:unstructured
-  - mm:sourceReference (string) multiple
+  - mm:sourceReference (string) multiple mandatory
   - mm:path (string)
   
 [mm:dependencies] > nt:unstructured
