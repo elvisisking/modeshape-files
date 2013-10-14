@@ -212,6 +212,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                 uploadMissingDependencies( modelNode, pathsToMissingDependencies, modeler );
             }
 
+            modelNode.getSession().save();
             return dependenciesNode.getPath();
         } catch ( final Exception e ) {
             throw new ModelerException( e );
