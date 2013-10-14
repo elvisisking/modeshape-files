@@ -30,13 +30,11 @@ import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
-import javax.jcr.RepositoryException;
 
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.ModelerException;
-import org.modeshape.modeler.internal.DependencyProcessor;
+import org.modeshape.modeler.extensions.DependencyProcessor;
 import org.modeshape.modeler.internal.ModelerLexicon;
 import org.modeshape.modeler.xsd.XsdLexicon;
 import org.modeshape.modeler.xsd.XsdModelerI18n;
@@ -70,7 +68,6 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
      */
     private static boolean pathIsRelative( final String input ) throws Exception {
         CheckArg.isNotEmpty( input, "input" );
-        // if no colon prepend file:
         final URI uri = new URI( input ).normalize();
         return !uri.isAbsolute();
     }
@@ -85,23 +82,26 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
     /**
      * {@inheritDoc}
      * 
-     * @see DependencyProcessor#process(Node, ModelType, Modeler)
+     * @see org.modeshape.modeler.extensions.DependencyProcessor#process(javax.jcr.Node, org.modeshape.modeler.Modeler)
      */
     @Override
     public String process( final Node modelNode,
-                           final ModelType modelType,
                            final Modeler modeler ) throws ModelerException {
         // method should not be called unless the right type of model node
         if ( !processable( modelNode ) ) {
             try {
                 throw new ModelerException( XsdModelerI18n.notAnXsdModel, modelNode.getName() );
-            } catch ( final RepositoryException e ) {
+            } catch ( final Exception e ) {
                 throw new ModelerException( e );
             }
         }
 
+        Node dependenciesNode = null;
+        List< String > pathsToMissingDependencies = null;
+
         try {
-            LOGGER.debug( "Processing model node '%s'", modelNode.getName() );
+            final String modelName = modelNode.getName();
+            LOGGER.debug( "Processing model node '%s'", modelName );
             Node schemaNode = null;
 
             { // find schema node
@@ -119,18 +119,17 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
 
             // should always have a schema node
             if ( schemaNode == null ) {
-                throw new ModelerException( XsdModelerI18n.schemaNodeNotFound, modelNode.getName() );
+                throw new ModelerException( XsdModelerI18n.schemaNodeNotFound, modelName );
             }
 
             // iterate over schema node's children to find dependencies
             final NodeIterator itr = schemaNode.getNodes();
 
             if ( !itr.hasNext() ) {
-                return null; // no dependencies node created
+                return null; // no children of schema node so dependencies node not created
             }
 
-            Node dependenciesNode = null;
-            final List< String > pathsToMissingDependencies = new ArrayList< String >( ( int ) itr.getSize() );
+            pathsToMissingDependencies = new ArrayList< String >();
 
             // find the dependency nodes
             while ( itr.hasNext() ) {
@@ -158,7 +157,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                 dependencyNode.setProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY, new String[] { location } );
                 LOGGER.debug( "Setting dependency source reference property to '%s'", location );
 
-                // derive path using model node path as starting point
+                // derive path using model node as starting point
                 Node node = modelNode;
                 String path = normalizePath( location );
                 boolean exists = false;
@@ -168,7 +167,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                         if ( path.startsWith( PARENT_PATH ) ) {
                             // if root node there is no parent
                             if ( node.getDepth() == 0 ) {
-                                throw new ModelerException( XsdModelerI18n.relativePathNotValid, path, modelNode.getName() );
+                                throw new ModelerException( XsdModelerI18n.relativePathNotValid, path, modelName );
                             }
 
                             node = node.getParent();
@@ -178,40 +177,37 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                         }
                     }
 
-                    // insert parent path
-                    String parentPath = node.getPath();
-
-                    if ( !parentPath.endsWith( "/" ) ) {
-                        parentPath += "/";
-                    }
-
-                    path = parentPath + path;
+                    exists = node.hasNode( path );
                 } else {
                     // TODO need more path analysis to include the original path property
                 }
 
-                // strip off leading slash to make path relative
-                exists = rootNode( node ).hasNode( path.substring( 1 ) );
-                LOGGER.debug( "Path '%s' exists '%s'", path, exists );
+                // insert parent path so that path starts at root
+                String parentPath = node.getPath();
 
+                if ( !parentPath.endsWith( "/" ) ) {
+                    parentPath += "/";
+                }
+
+                path = parentPath + path;
                 dependencyNode.setProperty( ModelerLexicon.PATH_PROPERTY, path );
                 LOGGER.debug( "Setting dependency path property to '%s'", path );
 
                 if ( !exists ) {
                     pathsToMissingDependencies.add( path );
                 }
+
+                // upload dependencies if necessary
+                if ( !pathsToMissingDependencies.isEmpty() ) {
+                    uploadMissingDependencies( modelNode, pathsToMissingDependencies, modeler );
+                }
             }
 
-            // did not find any dependencies
             if ( dependenciesNode == null ) {
                 return null;
             }
 
-            // process any missing dependencies
-            if ( !pathsToMissingDependencies.isEmpty() ) {
-                uploadMissingDependencies( pathsToMissingDependencies, modeler, modelType );
-            }
-
+            dependenciesNode.getSession().save();
             return dependenciesNode.getPath();
         } catch ( final Exception e ) {
             throw new ModelerException( e );
@@ -221,38 +217,37 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.internal.DependencyProcessor#processable(javax.jcr.Node)
+     * @see org.modeshape.modeler.extensions.DependencyProcessor#processable(javax.jcr.Node)
      */
     @Override
     public boolean processable( final Node modelNode ) throws ModelerException {
         CheckArg.isNotNull( modelNode, "modelNode" );
 
         try {
-            return MODEL_ID.equals( modelNode.getProperty( ModelerLexicon.MODEL_TYPE ).getString() );
+            if ( modelNode.hasProperty( ModelerLexicon.MODEL_TYPE ) ) {
+                return MODEL_ID.equals( modelNode.getProperty( ModelerLexicon.MODEL_TYPE ).getString() );
+            }
         } catch ( final Exception e ) {
             throw new ModelerException( e );
         }
+
+        return false;
     }
 
-    private Node rootNode( final Node node ) throws Exception {
-        return ( Node ) node.getAncestor( 0 );
-    }
-
-    private void uploadMissingDependencies( final List< String > paths,
-                                            final Modeler modeler,
-                                            final ModelType modelType ) {
+    void uploadMissingDependencies( final Node modelNode,
+                                    final List< String > paths,
+                                    final Modeler modeler ) {
         assert ( paths != null );
         assert ( modeler != null );
         // TODO implement uploadMissingDependencies
-        //
+
         // for ( final String path : paths ) {
         // try {
         // modeler.importArtifact( name, new URL( path ).openStream(), path );
-        // modeler.createModel( path, modelType );
+        // modeler.generateModel( path, modelType );
         // } catch ( final Exception e ) {
         // LOGGER.error( e, message, params );
         // }
         // }
     }
-
 }

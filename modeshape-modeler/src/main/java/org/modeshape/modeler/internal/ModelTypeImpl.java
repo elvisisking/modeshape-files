@@ -35,6 +35,7 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.ModelerException;
+import org.modeshape.modeler.extensions.DependencyProcessor;
 import org.modeshape.modeler.extensions.Desequencer;
 
 /**
@@ -48,6 +49,9 @@ public final class ModelTypeImpl implements ModelType {
     private final String category;
     private final String name;
     private final Set< String > sourceFileExtensions = new HashSet<>();
+
+    private DependencyProcessor dependencyProcessor;
+    private Class< DependencyProcessor > dependencyProcessorClass;
 
     ModelTypeImpl( final Manager manager,
                    final String category,
@@ -69,6 +73,23 @@ public final class ModelTypeImpl implements ModelType {
     @Override
     public String category() {
         return category;
+    }
+
+    /**
+     * @return the dependency processor or <code>null</code> if one does not exist
+     * @throws ModelerException
+     *         if there is an error constructing the dependency processor
+     */
+    public DependencyProcessor dependencyProcessor() throws ModelerException {
+        if ( ( this.dependencyProcessor == null ) && ( this.dependencyProcessorClass != null ) ) {
+            try {
+                this.dependencyProcessor = this.dependencyProcessorClass.newInstance();
+            } catch ( final Exception e ) {
+                throw new ModelerException( e );
+            }
+        }
+
+        return this.dependencyProcessor;
     }
 
     /**

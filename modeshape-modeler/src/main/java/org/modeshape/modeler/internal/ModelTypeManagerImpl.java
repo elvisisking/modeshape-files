@@ -64,6 +64,7 @@ import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.ModelTypeManager;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.ModelerI18n;
+import org.modeshape.modeler.extensions.DependencyProcessor;
 import org.polyglotter.common.Logger;
 
 /**

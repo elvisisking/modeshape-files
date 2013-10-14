@@ -36,8 +36,8 @@ import javax.jcr.Session;
 
 import org.junit.Test;
 import org.modeshape.modeler.ModelType;
+import org.modeshape.modeler.extensions.DependencyProcessor;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
-import org.modeshape.modeler.internal.DependencyProcessor;
 import org.modeshape.modeler.internal.ModelImpl;
 import org.modeshape.modeler.internal.ModelerLexicon;
 import org.modeshape.modeler.internal.Task;
@@ -78,7 +78,7 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
             @Override
             public Node run( final Session session ) throws Exception {
                 final Node modelNode = session.getNode( model.absolutePath() );
-                final String dependenciesPath = processor.process( modelNode, xsdModelType, modeler() );
+                final String dependenciesPath = processor.process( modelNode, modeler() );
                 assertThat( dependenciesPath, nullValue() );
 
                 return null;
@@ -100,7 +100,7 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
             @Override
             public Node run( final Session session ) throws Exception {
                 final Node modelNode = session.getNode( model.absolutePath() );
-                final String dependenciesPath = processor.process( modelNode, xsdModelType, modeler() );
+                final String dependenciesPath = processor.process( modelNode, modeler() );
                 assertThat( dependenciesPath, notNullValue() );
 
                 final Node dependenciesNode = session.getNode( dependenciesPath );
@@ -133,7 +133,7 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
             @Override
             public Node run( final Session session ) throws Exception {
                 final Node modelNode = session.getNode( model.absolutePath() );
-                final String dependenciesPath = processor.process( modelNode, xsdModelType, modeler() );
+                final String dependenciesPath = processor.process( modelNode, modeler() );
                 assertThat( dependenciesPath, notNullValue() );
 
                 final Node dependenciesNode = session.getNode( dependenciesPath );
