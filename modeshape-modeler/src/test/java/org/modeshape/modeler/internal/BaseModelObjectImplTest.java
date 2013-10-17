@@ -42,7 +42,6 @@ public abstract class BaseModelObjectImplTest extends BaseTest {
     }
 
     protected ModelObject modelObject() throws Exception {
-        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
         final ModelObject modelObject =
             modeler().generateModel( stream( XML_ARTIFACT ), MODEL_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );

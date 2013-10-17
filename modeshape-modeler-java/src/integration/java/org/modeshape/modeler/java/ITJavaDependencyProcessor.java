@@ -27,8 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 
-import java.net.URL;
-
 import javax.jcr.Node;
 import javax.jcr.Session;
 
@@ -43,9 +41,6 @@ public class ITJavaDependencyProcessor extends BaseIntegrationTest {
 
     @Test
     public void shouldDetermineDependencies() throws Exception {
-        for ( final URL url : modelTypeManager().modelTypeRepositories() )
-            modelTypeManager().unregisterModelTypeRepository( url );
-        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         assertThat( modelTypeManager().install( "java" ).length == 0, is( true ) );
         final String name = JavaDependencyProcessor.class.getName();
         // final File file = new File( "src/main/java/" + name.replace( '.', '/' ) + ".java" );
