@@ -34,9 +34,20 @@ public interface ModelType {
     String category();
 
     /**
+     * @return the ID of this model type
+     */
+    String id();
+
+    /**
      * @return the name of this model type
      */
     String name();
+
+    /**
+     * @param name
+     *        the name of this model type
+     */
+    void setName( String name );
 
     /**
      * @return the source file extensions associated with this model type

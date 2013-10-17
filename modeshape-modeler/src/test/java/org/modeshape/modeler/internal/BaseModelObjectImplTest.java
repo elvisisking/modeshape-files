@@ -45,7 +45,7 @@ public abstract class BaseModelObjectImplTest extends BaseTest {
         modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
         final ModelObject modelObject =
-            modeler().generateModel( stream( XML_ARTIFACT ), MODEL_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
+            modeler().generateModel( stream( XML_ARTIFACT ), MODEL_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
         assertThat( modelObject, notNullValue() );
         return modelObject;
     }

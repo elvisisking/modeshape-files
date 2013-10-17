@@ -217,7 +217,7 @@ public final class ModelerTest extends BaseTest {
         modelTypeManager().install( "xml" );
         final Model model = modeler().generateModel( new File( "src/test/resources/Books.xsd" ),
                                                      null,
-                                                     modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
+                                                     modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
         assertThat( model, notNullValue() );
     }
 
@@ -228,7 +228,7 @@ public final class ModelerTest extends BaseTest {
         final Model model = modeler().generateModel( new File( "src/test/resources/Books.xsd" ),
                                                      null,
                                                      ARTIFACT_NAME,
-                                                     modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
+                                                     modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
         assertThat( model, notNullValue() );
         assertThat( model.name(), is( ARTIFACT_NAME ) );
     }
@@ -236,7 +236,7 @@ public final class ModelerTest extends BaseTest {
     @Test
     public void shouldGenerateModelFromStream() throws Exception {
         modelTypeManager().install( "xml" );
-        modeler().generateModel( stream( XML_ARTIFACT ), ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
+        modeler().generateModel( stream( XML_ARTIFACT ), ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
     }
 
     @Test
@@ -245,7 +245,7 @@ public final class ModelerTest extends BaseTest {
         modelTypeManager().install( "xml" );
         final Model model = modeler().generateModel( new URL( "file:src/test/resources/Books.xsd" ),
                                                      null,
-                                                     modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
+                                                     modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
         assertThat( model, notNullValue() );
     }
 
@@ -256,7 +256,7 @@ public final class ModelerTest extends BaseTest {
         final Model model = modeler().generateModel( new URL( "file:src/test/resources/Books.xsd" ),
                                                      null,
                                                      ARTIFACT_NAME,
-                                                     modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
+                                                     modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
         assertThat( model, notNullValue() );
         assertThat( model.name(), is( ARTIFACT_NAME ) );
     }
@@ -266,7 +266,7 @@ public final class ModelerTest extends BaseTest {
         modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
         final String path = modeler().importArtifact( stream( XML_ARTIFACT ), ARTIFACT_NAME );
-        final Model model = modeler().generateModel( path, ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
+        final Model model = modeler().generateModel( path, ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
         assertThat( model, notNullValue() );
     }
 
@@ -286,7 +286,7 @@ public final class ModelerTest extends BaseTest {
     public void shouldGetModel() throws Exception {
         modelTypeManager().install( XML_MODEL_TYPE_CATEGORY );
         final Model generatedModel =
-            modeler().generateModel( stream( XML_ARTIFACT ), ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
+            modeler().generateModel( stream( XML_ARTIFACT ), ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
         final Model model = modeler().model( ARTIFACT_NAME );
         assertThat( model, is( generatedModel ) );
     }

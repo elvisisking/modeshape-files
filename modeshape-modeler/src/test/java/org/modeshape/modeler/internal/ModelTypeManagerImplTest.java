@@ -183,7 +183,7 @@ public class ModelTypeManagerImplTest extends BaseTest {
     public void shouldGetModelType() throws Exception {
         modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
-        assertThat( modelTypeManager().modelType( XML_MODEL_TYPE_NAME ), notNullValue() );
+        assertThat( modelTypeManager().modelType( XML_MODEL_TYPE_ID ), notNullValue() );
     }
 
     @Test
@@ -320,16 +320,52 @@ public class ModelTypeManagerImplTest extends BaseTest {
     @Test
     public void shouldUninstall() throws Exception {
         modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
-        modelTypeManager().install( "java" );
-        assertThat( modelTypeManager().modelTypes().length == 0, is( false ) );
+        assertThat( modelTypeManager().install( "java" ).length, is( 0 ) );
+        assertThat( modelTypeManager().modelTypes().length, not( 0 ) );
+        assertThat( modelTypeManager().potentialSequencerClassNamesByCategory.isEmpty(), is( true ) );
         modelTypeManager().uninstall( "java" );
-        assertThat( modelTypeManager().modelTypes().length == 0, is( true ) );
+        assertThat( modelTypeManager().modelTypes().length, is( 0 ) );
+        assertThat( modelTypeManager().potentialSequencerClassNamesByCategory.isEmpty(), is( true ) );
         manager().run( modelTypeManager(), new SystemTask< Void >() {
 
             @Override
             public Void run( final Session session,
                              final Node systemNode ) throws Exception {
                 assertThat( systemNode.getProperty( ModelTypeManagerImpl.ZIPS ).getValues().length, is( 0 ) );
+                assertThat( systemNode.getNode( ModelTypeManagerImpl.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY ).hasNode( "java" ),
+                            is( false ) );
+                return null;
+            }
+        } );
+    }
+
+    @Test
+    public void shouldUninstallWhenClassNamesUnresolvable() throws Exception {
+        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        assertThat( modelTypeManager().install( "xsd" ).length, not( 0 ) );
+        manager().run( modelTypeManager(), new SystemTask< Void >() {
+
+            @Override
+            public Void run( final Session session,
+                             final Node systemNode ) throws Exception {
+                assertThat( systemNode.getProperty( ModelTypeManagerImpl.ZIPS ).getValues().length, not( 0 ) );
+                assertThat( systemNode.getNode( ModelTypeManagerImpl.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY ).hasNode( "xsd" ),
+                            is( true ) );
+                return null;
+            }
+        } );
+        assertThat( modelTypeManager().modelTypes().length, is( 0 ) );
+        assertThat( modelTypeManager().potentialSequencerClassNamesByCategory.isEmpty(), is( false ) );
+        modelTypeManager().uninstall( "xsd" );
+        assertThat( modelTypeManager().potentialSequencerClassNamesByCategory.isEmpty(), is( true ) );
+        manager().run( modelTypeManager(), new SystemTask< Void >() {
+
+            @Override
+            public Void run( final Session session,
+                             final Node systemNode ) throws Exception {
+                assertThat( systemNode.getProperty( ModelTypeManagerImpl.ZIPS ).getValues().length, is( 0 ) );
+                assertThat( systemNode.getNode( ModelTypeManagerImpl.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY ).hasNode( "xsd" ),
+                            is( false ) );
                 return null;
             }
         } );

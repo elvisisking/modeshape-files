@@ -254,7 +254,7 @@ public final class ModeShapeModeler implements Modeler {
                                                                         }
                                                                     } );
                 if ( save ) {
-                    modelNode.setProperty( ModelerLexicon.MODEL_TYPE, modelType.name() );
+                    modelNode.setProperty( ModelerLexicon.MODEL_TYPE, modelType.id() );
                     final ModelImpl model = new ModelImpl( manager, modelNode.getPath() );
                     session.save();
                     processDependencies( modelNode, model );
@@ -432,11 +432,7 @@ public final class ModeShapeModeler implements Modeler {
 
     void processDependencies( final Node modelNode,
                               final ModelImpl model ) throws Exception {
-        CheckArg.isNotNull( modelNode, "modelNode" );
-        CheckArg.isNotNull( model, "model" );
-
         final DependencyProcessor dependencyProcessor = model.dependencyProcessor();
-
         if ( dependencyProcessor == null ) {
             Logger.getLogger( getClass() ).debug( "No dependency processor found for model '" + modelNode.getName() + '\'' );
         } else {

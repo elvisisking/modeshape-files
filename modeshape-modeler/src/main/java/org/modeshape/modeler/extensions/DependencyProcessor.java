@@ -51,18 +51,8 @@ public interface DependencyProcessor {
      * @return the path to the dependencies node or <code>null</code> if no dependencies were processed
      * @throws ModelerException
      *         if the specified model is not valid for this processor or if there is an error during processing
-     * @see #processable(Node)
      */
     String process( final Node modelNode,
                     final Modeler modeler ) throws ModelerException;
-
-    /**
-     * @param modelNode
-     *        the node of the model being checked (cannot be <code>null</code>)
-     * @return <code>true</code> if the specified model can be processed
-     * @throws ModelerException
-     *         if an error occurs
-     */
-    boolean processable( final Node modelNode ) throws ModelerException;
 
 }

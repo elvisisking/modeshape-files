@@ -97,7 +97,7 @@ public class ModelImplTest extends BaseModelObjectImplTest {
         modelTypeManager().install( XML_MODEL_TYPE_CATEGORY );
         final Model model = modeler().generateModel( new URL( location ),
                                                      null,
-                                                     modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
+                                                     modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
         assertThat( model, notNullValue() );
         assertThat( model.stringValue( ModelerLexicon.EXTERNAL_LOCATION ), is( location ) );
     }
@@ -131,7 +131,7 @@ public class ModelImplTest extends BaseModelObjectImplTest {
     public void shouldGetModelType() throws Exception {
         final ModelType type = ( ( Model ) modelObject() ).modelType();
         assertThat( type, notNullValue() );
-        assertThat( type.name(), is( XML_MODEL_TYPE_NAME ) );
+        assertThat( type.id(), is( XML_MODEL_TYPE_ID ) );
     }
 
     @Test

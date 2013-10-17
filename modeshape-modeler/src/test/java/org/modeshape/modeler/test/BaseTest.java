@@ -55,7 +55,7 @@ public abstract class BaseTest {
     protected static final String ARTIFACT_NAME = "artifact";
     protected static final String MODEL_NAME = "model";
     protected static final String XML_MODEL_TYPE_CATEGORY = "xml";
-    protected static final String XML_MODEL_TYPE_NAME = "org.modeshape.modeler.xml.Xml";
+    protected static final String XML_MODEL_TYPE_ID = "org.modeshape.modeler.xml.Xml";
     protected static final String XML_ROOT = "root";
     protected static final String XML_ROOT_PROPERTY = "property";
     protected static final String XML_LEAF = "child";

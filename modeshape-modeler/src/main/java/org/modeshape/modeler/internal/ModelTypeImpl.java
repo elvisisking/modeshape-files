@@ -44,31 +44,32 @@ import org.modeshape.modeler.extensions.Desequencer;
 public final class ModelTypeImpl implements ModelType {
 
     private final Manager manager;
-    final Class< ? > sequencerClass;
-    final Class< ? > desequencerClass;
+    final Class< Sequencer > sequencerClass;
+    final Class< DependencyProcessor > dependencyProcessorClass;
+    final Class< Desequencer > desequencerClass;
     private final String category;
-    private final String name;
+    private final String id;
+    private String name;
     private final Set< String > sourceFileExtensions = new HashSet<>();
-
-    private DependencyProcessor dependencyProcessor;
-    private Class< DependencyProcessor > dependencyProcessorClass;
 
     ModelTypeImpl( final Manager manager,
                    final String category,
-                   final String name,
-                   final Class< ? > sequencerClass,
-                   final Class< ? > desequencerClass ) {
+                   final String id,
+                   final Class< Sequencer > sequencerClass,
+                   final Class< DependencyProcessor > dependencyProcessorClass,
+                   final Class< Desequencer > desequencerClass ) {
         this.manager = manager;
         this.category = category;
-        this.name = name;
+        this.id = id;
         this.sequencerClass = sequencerClass;
+        this.dependencyProcessorClass = dependencyProcessorClass;
         this.desequencerClass = desequencerClass;
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.ModelType#category()
+     * @see ModelType#category()
      */
     @Override
     public String category() {
@@ -81,15 +82,12 @@ public final class ModelTypeImpl implements ModelType {
      *         if there is an error constructing the dependency processor
      */
     public DependencyProcessor dependencyProcessor() throws ModelerException {
-        if ( ( this.dependencyProcessor == null ) && ( this.dependencyProcessorClass != null ) ) {
-            try {
-                this.dependencyProcessor = this.dependencyProcessorClass.newInstance();
-            } catch ( final Exception e ) {
-                throw new ModelerException( e );
-            }
+        if ( this.dependencyProcessorClass == null ) return null;
+        try {
+            return this.dependencyProcessorClass.newInstance();
+        } catch ( final Exception e ) {
+            throw new ModelerException( e );
         }
-
-        return this.dependencyProcessor;
     }
 
     /**
@@ -98,26 +96,28 @@ public final class ModelTypeImpl implements ModelType {
      *         if any problem occurs
      */
     public Desequencer desequencer() throws ModelerException {
-        return manager.run( new Task< Desequencer >() {
-
-            @Override
-            public Desequencer run( final Session session ) throws Exception {
-                final Desequencer desequencer = ( Desequencer ) desequencerClass.newInstance();
-                // Initialize
-                ReflectionUtil.setValue( desequencer, "logger", ExtensionLogger.getLogger( desequencer.getClass() ) );
-                ReflectionUtil.setValue( desequencer,
-                                         "repositoryName",
-                                         session.getRepository().getDescriptor( Repository.REPOSITORY_NAME ) );
-                ReflectionUtil.setValue( desequencer, "name", desequencer.getClass().getSimpleName() );
-                return desequencer;
-            }
-        } );
+        if ( desequencerClass == null ) return null;
+        try {
+            return desequencerClass.newInstance();
+        } catch ( final Exception e ) {
+            throw new ModelerException( e );
+        }
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.ModelType#name()
+     * @see ModelType#id()
+     */
+    @Override
+    public String id() {
+        return id;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see ModelType#name()
      */
     @Override
     public String name() {
@@ -134,7 +134,7 @@ public final class ModelTypeImpl implements ModelType {
 
             @Override
             public Sequencer run( final Session session ) throws Exception {
-                final Sequencer sequencer = ( Sequencer ) sequencerClass.newInstance();
+                final Sequencer sequencer = sequencerClass.newInstance();
                 // Initialize
                 ReflectionUtil.setValue( sequencer, "logger", ExtensionLogger.getLogger( sequencer.getClass() ) );
                 ReflectionUtil.setValue( sequencer, "repositoryName",
@@ -150,7 +150,17 @@ public final class ModelTypeImpl implements ModelType {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.ModelType#sourceFileExtensions()
+     * @see ModelType#setName(String)
+     */
+    @Override
+    public void setName( final String name ) {
+        this.name = name;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see ModelType#sourceFileExtensions()
      */
     @Override
     public String[] sourceFileExtensions() {
@@ -160,7 +170,7 @@ public final class ModelTypeImpl implements ModelType {
     /**
      * {@inheritDoc}
      * 
-     * @see java.lang.Object#toString()
+     * @see Object#toString()
      */
     @Override
     public String toString() {

@@ -41,7 +41,7 @@ import org.modeshape.modeler.internal.Task;
 @SuppressWarnings( "javadoc" )
 public class ITModeler extends BaseIntegrationTest {
 
-    private static final String XSD_MODEL_TYPE_NAME = "org.modeshape.modeler.xsd.Xsd";
+    private static final String XSD_MODEL_TYPE_ID = "org.modeshape.modeler.xsd.Xsd";
 
     @Test
     public void shouldExportToFile() throws Exception {
@@ -65,7 +65,7 @@ public class ITModeler extends BaseIntegrationTest {
             modelTypeManager().unregisterModelTypeRepository( url );
         modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
-        modeler().generateModel( importArtifact( "stuff" ), ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
+        modeler().generateModel( importArtifact( "stuff" ), ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
     }
 
     @Test( expected = ModelerException.class )
@@ -76,7 +76,7 @@ public class ITModeler extends BaseIntegrationTest {
         modelTypeManager().install( "xml" );
         modeler().generateModel( importArtifact( XML_DECLARATION + "<stuff>" ),
                                  ARTIFACT_NAME,
-                                 modelTypeManager().modelType( XML_MODEL_TYPE_NAME ) );
+                                 modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
     }
 
     @Test
@@ -88,7 +88,7 @@ public class ITModeler extends BaseIntegrationTest {
         final String path = importArtifact( XSD_ARTIFACT );
         ModelType modelType = null;
         for ( final ModelType type : modelTypeManager().modelTypesForArtifact( path ) ) {
-            if ( type.name().equals( XSD_MODEL_TYPE_NAME ) ) {
+            if ( type.id().equals( XSD_MODEL_TYPE_ID ) ) {
                 modelType = type;
                 break;
             }
@@ -115,7 +115,7 @@ public class ITModeler extends BaseIntegrationTest {
         ModelType xsdModelType = null;
 
         for ( final ModelType type : modelTypeManager().modelTypes() ) {
-            if ( type.name().equals( XSD_MODEL_TYPE_NAME ) ) {
+            if ( type.id().equals( XSD_MODEL_TYPE_ID ) ) {
                 xsdModelType = type;
                 break;
             }
