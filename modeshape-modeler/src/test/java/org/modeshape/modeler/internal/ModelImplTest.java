@@ -46,15 +46,15 @@ public class ModelImplTest extends BaseModelObjectImplTest {
 
     Node createDependenciesNode( final Session session,
                                  final Model model ) throws Exception {
-        final Node dependenciesNode = session.getNode( model.absolutePath() ).addNode( ModelerLexicon.DEPENDENCIES_NODE );
+        final Node dependenciesNode = session.getNode( model.absolutePath() ).addNode( ModelerLexicon.DEPENDENCIES );
         return dependenciesNode;
     }
 
     Node createDependencyNode( final Node dependenciesNode,
                                final String dependencyNodeName,
                                final String dependencyWorkspacePath ) throws Exception {
-        final Node dependencyNode = dependenciesNode.addNode( dependencyNodeName, ModelerLexicon.DEPENDENCY_NODE );
-        dependencyNode.setProperty( ModelerLexicon.PATH_PROPERTY, dependencyWorkspacePath );
+        final Node dependencyNode = dependenciesNode.addNode( dependencyNodeName, ModelerLexicon.DEPENDENCY );
+        dependencyNode.setProperty( ModelerLexicon.PATH, dependencyWorkspacePath );
         dependencyNode.setProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY, new String[] { "import" } ); // mandatory property
         return dependencyNode;
     }

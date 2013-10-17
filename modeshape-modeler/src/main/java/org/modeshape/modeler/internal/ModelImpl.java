@@ -50,8 +50,6 @@ import org.modeshape.modeler.extensions.DependencyProcessor;
  */
 public class ModelImpl extends ModelObjectImpl implements Model {
 
-    static final Set< Dependency > NO_DEPENDENCIES = Collections.emptySet();
-
     private Set< Dependency > dependencies;
 
     /**
@@ -89,8 +87,8 @@ public class ModelImpl extends ModelObjectImpl implements Model {
                 public Set< Dependency > run( final Session session ) throws Exception {
                     final Node modelNode = session.getNode( absolutePath() );
 
-                    if ( modelNode.hasNode( ModelerLexicon.DEPENDENCIES_NODE ) ) {
-                        final NodeIterator itr = modelNode.getNode( ModelerLexicon.DEPENDENCIES_NODE ).getNodes();
+                    if ( modelNode.hasNode( ModelerLexicon.DEPENDENCIES ) ) {
+                        final NodeIterator itr = modelNode.getNode( ModelerLexicon.DEPENDENCIES ).getNodes();
                         final Set< Dependency > result = new HashSet<>( ( int ) itr.getSize() );
 
                         while ( itr.hasNext() ) {
@@ -98,7 +96,8 @@ public class ModelImpl extends ModelObjectImpl implements Model {
 
                             // must have source references
                             if ( dependencyNode.hasProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ) ) {
-                                final Value[] values = dependencyNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues();
+                                final Value[] values =
+                                    dependencyNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues();
                                 final List< String > refs = new ArrayList<>( values.length );
 
                                 for ( final Value value : values ) {
@@ -108,8 +107,8 @@ public class ModelImpl extends ModelObjectImpl implements Model {
                                 String dependencyPath = null;
                                 boolean exists = false;
 
-                                if ( dependencyNode.hasProperty( ModelerLexicon.PATH_PROPERTY ) ) {
-                                    dependencyPath = dependencyNode.getProperty( ModelerLexicon.PATH_PROPERTY ).getString();
+                                if ( dependencyNode.hasProperty( ModelerLexicon.PATH ) ) {
+                                    dependencyPath = dependencyNode.getProperty( ModelerLexicon.PATH ).getString();
                                 }
 
                                 if ( !StringUtil.isBlank( dependencyPath ) ) {
@@ -126,7 +125,7 @@ public class ModelImpl extends ModelObjectImpl implements Model {
                         return result;
                     }
 
-                    return NO_DEPENDENCIES;
+                    return Collections.emptySet();
                 }
             } );
         }
@@ -175,7 +174,7 @@ public class ModelImpl extends ModelObjectImpl implements Model {
                 final Set< Dependency > dependencies = dependencies();
 
                 if ( dependencies.isEmpty() ) {
-                    return NO_DEPENDENCIES;
+                    return Collections.emptySet();
                 }
 
                 final Set< Dependency > missing = new HashSet<>();

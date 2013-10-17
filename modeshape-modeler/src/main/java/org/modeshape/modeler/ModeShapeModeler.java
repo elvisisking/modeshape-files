@@ -434,7 +434,7 @@ public final class ModeShapeModeler implements Modeler {
                               final ModelImpl model ) throws Exception {
         final DependencyProcessor dependencyProcessor = model.dependencyProcessor();
         if ( dependencyProcessor == null ) {
-            Logger.getLogger( getClass() ).debug( "No dependency processor found for model '" + modelNode.getName() + '\'' );
+            Logger.getLogger( getClass() ).debug( "No dependency processor found for model '%s'", modelNode.getName() );
         } else {
             dependencyProcessor.process( modelNode, this );
         }

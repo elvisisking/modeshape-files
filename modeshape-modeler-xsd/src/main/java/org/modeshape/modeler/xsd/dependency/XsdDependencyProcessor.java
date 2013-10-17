@@ -134,13 +134,13 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
 
                 // create dependencies folder node if not already created
                 if ( dependenciesNode == null ) {
-                    dependenciesNode = modelNode.addNode( ModelerLexicon.DEPENDENCIES_NODE, ModelerLexicon.DEPENDENCIES_NODE );
+                    dependenciesNode = modelNode.addNode( ModelerLexicon.DEPENDENCIES, ModelerLexicon.DEPENDENCIES );
                     LOGGER.debug( "Created dependencies folder node '%s'", dependenciesNode.getPath() );
                 }
 
                 // create dependency node
                 final Node dependencyNode =
-                    dependenciesNode.addNode( ModelerLexicon.DEPENDENCY_NODE, ModelerLexicon.DEPENDENCY_NODE );
+                    dependenciesNode.addNode( ModelerLexicon.DEPENDENCY, ModelerLexicon.DEPENDENCY );
 
                 // set input property
                 final Property locationProp = kid.getProperty( SCHEMA_LOCATION );
@@ -181,7 +181,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                 }
 
                 path = parentPath + path;
-                dependencyNode.setProperty( ModelerLexicon.PATH_PROPERTY, path );
+                dependencyNode.setProperty( ModelerLexicon.PATH, path );
                 LOGGER.debug( "Setting dependency path property to '%s'", path );
 
                 if ( !exists ) {

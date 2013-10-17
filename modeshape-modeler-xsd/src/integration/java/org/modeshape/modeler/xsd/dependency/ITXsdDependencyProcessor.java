@@ -107,8 +107,8 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
                 assertThat( dependenciesNode.getNodes().getSize(), is( 1L ) );
 
                 final Node dependencyNode = dependenciesNode.getNodes().nextNode();
-                assertThat( dependencyNode.getPrimaryNodeType().getName(), is( ModelerLexicon.DEPENDENCY_NODE ) );
-                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH_PROPERTY ).getString(), is( "/data/types/BookDatatypes.xsd" ) );
+                assertThat( dependencyNode.getPrimaryNodeType().getName(), is( ModelerLexicon.DEPENDENCY ) );
+                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH ).getString(), is( "/data/types/BookDatatypes.xsd" ) );
 
                 final String input =
                     dependencyNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues()[ 0 ].getString();
@@ -140,8 +140,8 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
                 assertThat( dependenciesNode.getNodes().getSize(), is( 1L ) );
 
                 final Node dependencyNode = dependenciesNode.getNodes().nextNode();
-                assertThat( dependencyNode.getPrimaryNodeType().getName(), is( ModelerLexicon.DEPENDENCY_NODE ) );
-                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH_PROPERTY ).getString(), is( model.absolutePath() + "/MovieDatatypes.xsd" ) );
+                assertThat( dependencyNode.getPrimaryNodeType().getName(), is( ModelerLexicon.DEPENDENCY ) );
+                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH ).getString(), is( model.absolutePath() + "/MovieDatatypes.xsd" ) );
 
                 final String input =
                     dependencyNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues()[ 0 ].getString();

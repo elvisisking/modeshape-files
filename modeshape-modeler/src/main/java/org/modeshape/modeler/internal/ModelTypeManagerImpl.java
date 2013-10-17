@@ -72,19 +72,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
 
     static final Logger LOGGER = Logger.getLogger( ModelTypeManagerImpl.class );
 
-    private static final String MODEL_TYPE_REPOSITORIES = "modelTypeRepositories";
-    static final String ZIPS = "zips";
-    static final String JARS = "jars";
-    private static final String MODEL_TYPES = "modelTypes";
-    private static final String CATEGORY = "category";
-    private static final String SEQUENCER_CLASS = "sequencerClass";
-    static final String POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY = "potentialSequencerClassNamesByCategory";
-    private static final String POTENTIAL_SEQUENCER_CLASS_NAMES = "potentialSequencerClassNames";
-
-    /**
-     * 
-     */
-    public static final String MODESHAPE_GROUP = "org/modeshape";
+    private static final String MODESHAPE_GROUP = "org/modeshape";
 
     final Manager manager;
 
@@ -111,21 +99,21 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             public Void run( final Session session,
                              final Node systemNode ) throws Exception {
                 // Load model type repositories
-                if ( !systemNode.hasProperty( MODEL_TYPE_REPOSITORIES ) ) {
+                if ( !systemNode.hasProperty( ModelerLexicon.MODEL_TYPE_REPOSITORIES ) ) {
                     final Value[] vals = new Value[ 2 ];
                     vals[ 0 ] = session.getValueFactory().createValue( JBOSS_MODEL_TYPE_REPOSITORY );
                     vals[ 1 ] = session.getValueFactory().createValue( MAVEN_MODEL_TYPE_REPOSITORY );
-                    systemNode.setProperty( MODEL_TYPE_REPOSITORIES, vals );
+                    systemNode.setProperty( ModelerLexicon.MODEL_TYPE_REPOSITORIES, vals );
                     session.save();
                 }
-                for ( final Value val : systemNode.getProperty( MODEL_TYPE_REPOSITORIES ).getValues() )
+                for ( final Value val : systemNode.getProperty( ModelerLexicon.MODEL_TYPE_REPOSITORIES ).getValues() )
                     modelTypeRepositories.add( new URL( val.getString() ) );
                 // Load jars
-                if ( !systemNode.hasNode( JARS ) ) {
-                    systemNode.addNode( JARS );
+                if ( !systemNode.hasNode( ModelerLexicon.JARS ) ) {
+                    systemNode.addNode( ModelerLexicon.JARS );
                     session.save();
                 }
-                for ( final NodeIterator iter = systemNode.getNode( JARS ).getNodes(); iter.hasNext(); ) {
+                for ( final NodeIterator iter = systemNode.getNode( ModelerLexicon.JARS ).getNodes(); iter.hasNext(); ) {
                     final Node node = iter.nextNode();
                     final Path jarPath = library.resolve( node.getName() );
                     try ( InputStream stream =
@@ -138,29 +126,30 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                     LOGGER.debug( "Installed jar: %s", jarPath );
                 }
                 // Load model types
-                if ( !systemNode.hasNode( MODEL_TYPES ) ) {
-                    systemNode.addNode( MODEL_TYPES );
+                if ( !systemNode.hasNode( ModelerLexicon.MODEL_TYPES ) ) {
+                    systemNode.addNode( ModelerLexicon.MODEL_TYPES );
                     session.save();
                 }
-                for ( final NodeIterator iter = systemNode.getNode( MODEL_TYPES ).getNodes(); iter.hasNext(); ) {
+                for ( final NodeIterator iter = systemNode.getNode( ModelerLexicon.MODEL_TYPES ).getNodes(); iter.hasNext(); ) {
                     final Node node = iter.nextNode();
                     modelTypes.add( new ModelTypeImpl( manager,
-                                                       node.getProperty( CATEGORY ).getString(),
+                                                       node.getProperty( ModelerLexicon.CATEGORY ).getString(),
                                                        node.getName(),
-                                                       ( Class< Sequencer > ) libraryClassLoader.loadClass( node.getProperty( SEQUENCER_CLASS ).getString() ),
+                                                       ( Class< Sequencer > ) libraryClassLoader.loadClass( node.getProperty( ModelerLexicon.SEQUENCER_CLASS )
+                                                                                                                .getString() ),
                                                        null,
                                                        null ) );
                 }
                 // Load potential sequencer class names
-                if ( !systemNode.hasNode( POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY ) ) {
-                    systemNode.addNode( POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY );
+                if ( !systemNode.hasNode( ModelerLexicon.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY ) ) {
+                    systemNode.addNode( ModelerLexicon.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY );
                     session.save();
                 }
                 for ( final NodeIterator iter =
-                    systemNode.getNode( POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY ).getNodes(); iter.hasNext(); ) {
+                    systemNode.getNode( ModelerLexicon.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY ).getNodes(); iter.hasNext(); ) {
                     final Node node = iter.nextNode();
                     final Set< String > names = new HashSet<>();
-                    for ( final Value val : node.getProperty( POTENTIAL_SEQUENCER_CLASS_NAMES ).getValues() )
+                    for ( final Value val : node.getProperty( ModelerLexicon.POTENTIAL_SEQUENCER_CLASS_NAMES ).getValues() )
                         names.add( val.getString() );
                     potentialSequencerClassNamesByCategory.put( node.getName(), names );
                 }
@@ -257,8 +246,8 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                 @Override
                 public Boolean run( final Session session,
                                     final Node systemNode ) throws Exception {
-                    if ( systemNode.hasProperty( ZIPS ) )
-                        for ( final Value val : systemNode.getProperty( ZIPS ).getValues() )
+                    if ( systemNode.hasProperty( ModelerLexicon.ZIPS ) )
+                        for ( final Value val : systemNode.getProperty( ModelerLexicon.ZIPS ).getValues() )
                             if ( val.getString().equals( archiveName ) ) {
                                 LOGGER.debug( "Archive already installed: %s", archiveName );
                                 return true;
@@ -314,11 +303,11 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                                 try ( InputStream stream = archive.getInputStream( archiveEntry ) ) {
                                     final Node node =
                                         new JcrTools().uploadFile( session,
-                                                                   systemNode.getPath() + '/' + JARS + '/'
+                                                                   systemNode.getPath() + '/' + ModelerLexicon.JARS + '/'
                                                                                    + jarPath.getFileName().toString(),
                                                                    stream );
                                     node.addMixin( ModelerLexicon.UNSTRUCTURED_MIXIN );
-                                    node.setProperty( CATEGORY, category );
+                                    node.setProperty( ModelerLexicon.CATEGORY, category );
                                     session.save();
                                 }
                                 return null;
@@ -368,9 +357,9 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                                         @Override
                                         public Void run( final Session session,
                                                          final Node systemNode ) throws Exception {
-                                            final Node node = systemNode.getNode( MODEL_TYPES ).addNode( type.id() );
-                                            node.setProperty( SEQUENCER_CLASS, sequencerClass.getName() );
-                                            node.setProperty( CATEGORY, category );
+                                            final Node node = systemNode.getNode( ModelerLexicon.MODEL_TYPES ).addNode( type.id() );
+                                            node.setProperty( ModelerLexicon.SEQUENCER_CLASS, sequencerClass.getName() );
+                                            node.setProperty( ModelerLexicon.CATEGORY, category );
                                             session.save();
                                             return null;
                                         }
@@ -392,13 +381,14 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                                      final Node systemNode ) throws Exception {
                         // Save that archive has been installed
                         Value[] vals =
-                            systemNode.hasProperty( ZIPS ) ? systemNode.getProperty( ZIPS ).getValues() : new Value[ 0 ];
+                            systemNode.hasProperty( ModelerLexicon.ZIPS ) ? systemNode.getProperty( ModelerLexicon.ZIPS ).getValues()
+                                                                         : new Value[ 0 ];
                         final Value[] newVals = new Value[ vals.length + 1 ];
                         System.arraycopy( vals, 0, newVals, 0, vals.length );
                         newVals[ vals.length ] = session.getValueFactory().createValue( archiveName );
-                        systemNode.setProperty( ZIPS, newVals );
+                        systemNode.setProperty( ModelerLexicon.ZIPS, newVals );
                         // Save potential class names
-                        final Node categoryNode = systemNode.getNode( POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY );
+                        final Node categoryNode = systemNode.getNode( ModelerLexicon.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY );
                         for ( final Entry< String, Set< String > > entry : potentialSequencerClassNamesByCategory.entrySet() ) {
                             final Node node =
                                 !categoryNode.hasNode( entry.getKey() ) ? categoryNode.addNode( entry.getKey() ) :
@@ -407,7 +397,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                             int ndx = 0;
                             for ( final String className : entry.getValue() )
                                 vals[ ndx++ ] = session.getValueFactory().createValue( className );
-                            node.setProperty( POTENTIAL_SEQUENCER_CLASS_NAMES, vals );
+                            node.setProperty( ModelerLexicon.POTENTIAL_SEQUENCER_CLASS_NAMES, vals );
                         }
                         session.save();
                         return null;
@@ -609,7 +599,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                 int ndx = 0;
                 for ( final URL url : modelTypeRepositories )
                     vals[ ndx++ ] = session.getValueFactory().createValue( url.toString() );
-                systemNode.setProperty( MODEL_TYPE_REPOSITORIES, vals );
+                systemNode.setProperty( ModelerLexicon.MODEL_TYPE_REPOSITORIES, vals );
                 session.save();
                 return null;
             }
@@ -632,7 +622,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             @Override
             public Void run( final Session session,
                              final Node systemNode ) throws Exception {
-                final Property prop = systemNode.getProperty( ZIPS );
+                final Property prop = systemNode.getProperty( ModelerLexicon.ZIPS );
                 final Value[] vals = prop.getValues();
                 final Value[] newVals = new Value[ vals.length - 1 ];
                 boolean found = false;
@@ -644,15 +634,15 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                     else if ( newVals.length > 0 ) newVals[ Math.min( newNdx++, newVals.length ) ] = val;
                 if ( !found ) return null;
                 prop.setValue( newVals );
-                for ( final NodeIterator iter = systemNode.getNode( JARS ).getNodes(); iter.hasNext(); ) {
+                for ( final NodeIterator iter = systemNode.getNode( ModelerLexicon.JARS ).getNodes(); iter.hasNext(); ) {
                     final Node node = iter.nextNode();
-                    if ( !node.getProperty( CATEGORY ).equals( category ) ) continue;
+                    if ( !node.getProperty( ModelerLexicon.CATEGORY ).equals( category ) ) continue;
                     final Path jarPath = library.resolve( node.getName() );
                     if ( jarPath.toFile().delete() ) LOGGER.debug( "Unable to delete jar: %s", jarPath );
                     node.remove();
                     LOGGER.debug( "Uninstalled jar: %s", jarPath );
                 }
-                final Node node = systemNode.getNode( POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY );
+                final Node node = systemNode.getNode( ModelerLexicon.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY );
                 if ( node.hasNode( category ) ) node.getNode( category ).remove();
                 session.save();
                 return null;
