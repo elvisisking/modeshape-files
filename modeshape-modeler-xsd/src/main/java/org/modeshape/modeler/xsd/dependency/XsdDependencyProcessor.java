@@ -87,15 +87,6 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
     @Override
     public String process( final Node modelNode,
                            final Modeler modeler ) throws ModelerException {
-        // method should not be called unless the right type of model node
-        if ( !processable( modelNode ) ) {
-            try {
-                throw new ModelerException( XsdModelerI18n.notAnXsdModel, modelNode.getName() );
-            } catch ( final Exception e ) {
-                throw new ModelerException( e );
-            }
-        }
-
         Node dependenciesNode = null;
         List< String > pathsToMissingDependencies = null;
 
@@ -217,26 +208,6 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
         } catch ( final Exception e ) {
             throw new ModelerException( e );
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.modeler.extensions.DependencyProcessor#processable(javax.jcr.Node)
-     */
-    @Override
-    public boolean processable( final Node modelNode ) throws ModelerException {
-        CheckArg.isNotNull( modelNode, "modelNode" );
-
-        try {
-            if ( modelNode.hasProperty( ModelerLexicon.MODEL_TYPE ) ) {
-                return MODEL_ID.equals( modelNode.getProperty( ModelerLexicon.MODEL_TYPE ).getString() );
-            }
-        } catch ( final Exception e ) {
-            throw new ModelerException( e );
-        }
-
-        return false;
     }
 
     void uploadMissingDependencies( final Node modelNode,

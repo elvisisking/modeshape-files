@@ -157,7 +157,7 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
         ModelType xsdModelType = null;
 
         for ( final ModelType type : modelTypeManager().modelTypes() ) {
-            if ( type.name().equals( XsdLexicon.MODEL_ID ) ) {
+            if ( type.id().equals( XsdLexicon.MODEL_TYPE_ID ) ) {
                 xsdModelType = type;
                 break;
             }
