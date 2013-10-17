@@ -233,7 +233,7 @@ public class ModelTypeManagerImplTest extends BaseTest {
                 @Override
                 public Void run( final Session session,
                                  final Node systemNode ) throws Exception {
-                    assertThat( systemNode.getProperty( ModelTypeManagerImpl.ZIPS ).getValues().length > 0, is( true ) );
+                    assertThat( systemNode.getProperty( ModelerLexicon.ZIPS ).getValues().length > 0, is( true ) );
                     return null;
                 }
             } );
@@ -270,7 +270,7 @@ public class ModelTypeManagerImplTest extends BaseTest {
                 final String version = manager().repository().getDescriptor( Repository.REP_VERSION_DESC );
                 final String archiveName = "modeshape-sequencer-test-" + version + "-module-with-dependencies.zip";
                 final Value[] vals = new Value[] { session.getValueFactory().createValue( archiveName ) };
-                systemNode.setProperty( ModelTypeManagerImpl.ZIPS, vals );
+                systemNode.setProperty( ModelerLexicon.ZIPS, vals );
                 session.save();
                 return null;
             }
@@ -331,8 +331,8 @@ public class ModelTypeManagerImplTest extends BaseTest {
             @Override
             public Void run( final Session session,
                              final Node systemNode ) throws Exception {
-                assertThat( systemNode.getProperty( ModelTypeManagerImpl.ZIPS ).getValues().length, is( 0 ) );
-                assertThat( systemNode.getNode( ModelTypeManagerImpl.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY ).hasNode( "java" ),
+                assertThat( systemNode.getProperty( ModelerLexicon.ZIPS ).getValues().length, is( 0 ) );
+                assertThat( systemNode.getNode( ModelerLexicon.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY ).hasNode( "java" ),
                             is( false ) );
                 return null;
             }
@@ -348,8 +348,8 @@ public class ModelTypeManagerImplTest extends BaseTest {
             @Override
             public Void run( final Session session,
                              final Node systemNode ) throws Exception {
-                assertThat( systemNode.getProperty( ModelTypeManagerImpl.ZIPS ).getValues().length, not( 0 ) );
-                assertThat( systemNode.getNode( ModelTypeManagerImpl.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY ).hasNode( "xsd" ),
+                assertThat( systemNode.getProperty( ModelerLexicon.ZIPS ).getValues().length, not( 0 ) );
+                assertThat( systemNode.getNode( ModelerLexicon.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY ).hasNode( "xsd" ),
                             is( true ) );
                 return null;
             }
@@ -363,8 +363,8 @@ public class ModelTypeManagerImplTest extends BaseTest {
             @Override
             public Void run( final Session session,
                              final Node systemNode ) throws Exception {
-                assertThat( systemNode.getProperty( ModelTypeManagerImpl.ZIPS ).getValues().length, is( 0 ) );
-                assertThat( systemNode.getNode( ModelTypeManagerImpl.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY ).hasNode( "xsd" ),
+                assertThat( systemNode.getProperty( ModelerLexicon.ZIPS ).getValues().length, is( 0 ) );
+                assertThat( systemNode.getNode( ModelerLexicon.POTENTIAL_SEQUENCER_CLASS_NAMES_BY_CATEGORY ).hasNode( "xsd" ),
                             is( false ) );
                 return null;
             }
