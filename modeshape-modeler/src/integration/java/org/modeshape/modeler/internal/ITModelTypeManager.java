@@ -34,8 +34,10 @@ import javax.jcr.Node;
 import javax.jcr.Session;
 
 import org.junit.Test;
+import org.modeshape.modeler.ModeShapeModeler;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.ModelTypeManager;
+import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
 
@@ -87,8 +89,11 @@ public class ITModelTypeManager extends BaseIntegrationTest {
 
     @Test
     public void shouldIniitializeModelTypeRepositories() throws Exception {
-        assertThat( modelTypeManager().modelTypeRepositories()[ 0 ], is( new URL( ModelTypeManager.JBOSS_MODEL_TYPE_REPOSITORY ) ) );
-        assertThat( modelTypeManager().modelTypeRepositories()[ 1 ], is( new URL( ModelTypeManager.MAVEN_MODEL_TYPE_REPOSITORY ) ) );
+        modeler().close();
+        try ( final Modeler modeler = new ModeShapeModeler( TEST_REPOSITORY_STORE_PARENT_PATH, TEST_MODESHAPE_CONFIGURATION_PATH ) ) {
+            assertThat( modeler.modelTypeManager().modelTypeRepositories()[ 0 ], is( new URL( ModelTypeManager.JBOSS_MODEL_TYPE_REPOSITORY ) ) );
+            assertThat( modeler.modelTypeManager().modelTypeRepositories()[ 1 ], is( new URL( ModelTypeManager.MAVEN_MODEL_TYPE_REPOSITORY ) ) );
+        }
     }
 
     @Test

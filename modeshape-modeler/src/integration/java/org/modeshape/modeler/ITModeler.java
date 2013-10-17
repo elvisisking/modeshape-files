@@ -29,7 +29,6 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
-import java.net.URL;
 
 import javax.jcr.Session;
 
@@ -45,9 +44,6 @@ public class ITModeler extends BaseIntegrationTest {
 
     @Test
     public void shouldExportToFile() throws Exception {
-        for ( final URL url : modelTypeManager().modelTypeRepositories() )
-            modelTypeManager().unregisterModelTypeRepository( url );
-        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         assertThat( modelTypeManager().install( "java" ).length == 0, is( true ) );
         final String name = ModelImpl.class.getName();
         final File file = new File( "src/main/java/" + name.replace( '.', '/' ) + ".java" );
@@ -61,18 +57,12 @@ public class ITModeler extends BaseIntegrationTest {
 
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
-        for ( final URL url : modelTypeManager().modelTypeRepositories() )
-            modelTypeManager().unregisterModelTypeRepository( url );
-        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
         modeler().generateModel( importArtifact( "stuff" ), ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
     }
 
     @Test( expected = ModelerException.class )
     public void shouldFailToGenerateModelIfFileIsInvalid() throws Exception {
-        for ( final URL url : modelTypeManager().modelTypeRepositories() )
-            modelTypeManager().unregisterModelTypeRepository( url );
-        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
         modeler().generateModel( importArtifact( XML_DECLARATION + "<stuff>" ),
                                  ARTIFACT_NAME,
@@ -81,7 +71,6 @@ public class ITModeler extends BaseIntegrationTest {
 
     @Test
     public void shouldGenerateModelOfSuppliedType() throws Exception {
-        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
         modelTypeManager().install( "sramp" );
         modelTypeManager().install( "xsd" );
@@ -107,7 +96,6 @@ public class ITModeler extends BaseIntegrationTest {
 
     @Test
     public void shouldNotFindDependencyProcessorForXsdModelNode() throws Exception {
-        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "sramp" );
         modelTypeManager().install( "xsd" );
 

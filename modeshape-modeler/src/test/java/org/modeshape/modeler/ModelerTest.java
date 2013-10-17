@@ -213,7 +213,6 @@ public final class ModelerTest extends BaseTest {
 
     @Test
     public void shouldGenerateModelFromFile() throws Exception {
-        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
         final Model model = modeler().generateModel( new File( "src/test/resources/Books.xsd" ),
                                                      null,
@@ -223,7 +222,6 @@ public final class ModelerTest extends BaseTest {
 
     @Test
     public void shouldGenerateModelFromFileWithSuppliedName() throws Exception {
-        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
         final Model model = modeler().generateModel( new File( "src/test/resources/Books.xsd" ),
                                                      null,
@@ -241,7 +239,6 @@ public final class ModelerTest extends BaseTest {
 
     @Test
     public void shouldGenerateModelFromUrl() throws Exception {
-        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
         final Model model = modeler().generateModel( new URL( "file:src/test/resources/Books.xsd" ),
                                                      null,
@@ -251,7 +248,6 @@ public final class ModelerTest extends BaseTest {
 
     @Test
     public void shouldGenerateModelFromUrlWithSuppliedName() throws Exception {
-        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
         final Model model = modeler().generateModel( new URL( "file:src/test/resources/Books.xsd" ),
                                                      null,
@@ -263,7 +259,6 @@ public final class ModelerTest extends BaseTest {
 
     @Test
     public void shouldGenerateModelFromWorkspaceArtifact() throws Exception {
-        modelTypeManager().registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager().install( "xml" );
         final String path = modeler().importArtifact( stream( XML_ARTIFACT ), ARTIFACT_NAME );
         final Model model = modeler().generateModel( path, ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
@@ -271,7 +266,7 @@ public final class ModelerTest extends BaseTest {
     }
 
     @Test
-    public void shouldGetChangedModeShapeConfigurationPath() {
+    public void shouldGetChangedModeShapeConfigurationPath() throws Exception {
         assertThat( modeler().modeShapeConfigurationPath(), is( TEST_MODESHAPE_CONFIGURATION_PATH ) );
     }
 
@@ -297,7 +292,7 @@ public final class ModelerTest extends BaseTest {
     }
 
     @Test
-    public void shouldGetRepositoryStoreParentPath() {
+    public void shouldGetRepositoryStoreParentPath() throws Exception {
         assertThat( modeler().repositoryStoreParentPath(), is( TEST_REPOSITORY_STORE_PARENT_PATH ) );
     }
 

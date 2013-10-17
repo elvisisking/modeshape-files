@@ -23,6 +23,7 @@
  */
 package org.modeshape.modeler.internal;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
@@ -421,11 +422,20 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         final Set< String > categories = new HashSet<>();
         for ( final URL repositoryUrl : modelTypeRepositories ) {
             try {
-                final Document doc = Jsoup.connect( path( repositoryUrl.toString(), MODESHAPE_GROUP ) ).get();
-                final Elements elements = doc.getElementsMatchingOwnText( "sequencer-" );
-                for ( final Element element : elements ) {
-                    final String href = element.attr( "href" );
-                    categories.add( href.substring( href.indexOf( "sequencer-" ) + "sequencer-".length(), href.lastIndexOf( '/' ) ) );
+                if ( repositoryUrl.getProtocol().startsWith( "file" ) ) {
+                    final File folder = new File( new URL( repositoryUrl, MODESHAPE_GROUP ).getPath() );
+                    for ( final File file : folder.listFiles() ) {
+                        final String name = file.getName();
+                        if ( name.contains( "sequencer-" ) )
+                            categories.add( name.substring( name.indexOf( "sequencer-" ) + "sequencer-".length() ) );
+                    }
+                } else {
+                    final Document doc = Jsoup.connect( path( repositoryUrl.toString(), MODESHAPE_GROUP ) ).get();
+                    final Elements elements = doc.getElementsMatchingOwnText( "sequencer-" );
+                    for ( final Element element : elements ) {
+                        final String href = element.attr( "href" );
+                        categories.add( href.substring( href.indexOf( "sequencer-" ) + "sequencer-".length(), href.lastIndexOf( '/' ) ) );
+                    }
                 }
             } catch ( final IOException e ) {
                 throw new ModelerException( e );
