@@ -24,6 +24,7 @@
 package org.modeshape.modeler.xsd.dependency;
 
 import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +33,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.extensions.DependencyProcessor;
@@ -82,13 +84,15 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.extensions.DependencyProcessor#process(javax.jcr.Node, org.modeshape.modeler.Modeler)
+     * @see org.modeshape.modeler.extensions.DependencyProcessor#process(java.lang.String, javax.jcr.Node,
+     *      org.modeshape.modeler.Modeler)
      */
     @Override
-    public String process( final Node modelNode,
+    public String process( final String artifactPath,
+                           final Node modelNode,
                            final Modeler modeler ) throws ModelerException {
         Node dependenciesNode = null;
-        List< String > pathsToMissingDependencies = null;
+        List< MissingDependency > pathsToMissingDependencies = null;
 
         try {
             final String modelName = modelNode.getName();
@@ -148,10 +152,11 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                 dependencyNode.setProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY, new String[] { location } );
                 LOGGER.debug( "Setting dependency source reference property to '%s'", location );
 
-                // derive path using model node as starting point
-                Node node = modelNode;
+                // derive path using model node parent as starting point
+                Node node = modelNode.getParent();
                 String path = normalizePath( location );
                 boolean exists = false;
+                int count = 0;
 
                 if ( pathIsRelative( path ) ) {
                     while ( path.startsWith( SELF_PATH ) || path.startsWith( PARENT_PATH ) ) {
@@ -163,6 +168,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
 
                             node = node.getParent();
                             path = path.substring( ( PARENT_PATH + '/' ).length() );
+                            ++count;
                         } else {
                             path = path.substring( ( SELF_PATH + '/' ).length() );
                         }
@@ -173,24 +179,19 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                     // TODO need more path analysis to include the original path property
                 }
 
-                // insert parent path so that path starts at root
-                String parentPath = node.getPath();
+                String parentModelPath = node.getPath();
 
-                if ( !parentPath.endsWith( "/" ) ) {
-                    parentPath += "/";
+                if ( !parentModelPath.endsWith( "/" ) ) {
+                    parentModelPath += "/";
                 }
 
-                path = parentPath + path;
-                dependencyNode.setProperty( ModelerLexicon.PATH, path );
-                LOGGER.debug( "Setting dependency path property to '%s'", path );
+                final String fullModelPath = parentModelPath + path;
+                dependencyNode.setProperty( ModelerLexicon.PATH, fullModelPath );
+                LOGGER.debug( "Setting dependency path property to '%s'", fullModelPath );
 
                 if ( !exists ) {
-                    pathsToMissingDependencies.add( path );
-                }
-
-                // upload dependencies if necessary
-                if ( !pathsToMissingDependencies.isEmpty() ) {
-                    uploadMissingDependencies( modelNode, pathsToMissingDependencies, modeler );
+                    final MissingDependency md = new MissingDependency( path, count, parentModelPath );
+                    pathsToMissingDependencies.add( md );
                 }
             }
 
@@ -200,7 +201,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
 
             // process any missing dependencies
             if ( !pathsToMissingDependencies.isEmpty() ) {
-                uploadMissingDependencies( modelNode, pathsToMissingDependencies, modeler );
+                uploadMissingDependencies( artifactPath, modelNode, pathsToMissingDependencies, modeler );
             }
 
             modelNode.getSession().save();
@@ -210,40 +211,85 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
         }
     }
 
-    void uploadMissingDependencies( final Node modelNode,
-                                    final List< String > paths,
+    void uploadMissingDependencies( final String artifactPath,
+                                    final Node modelNode,
+                                    final List< MissingDependency > missingDependencies,
                                     final Modeler modeler ) throws Exception {
         assert ( modelNode != null );
-        assert ( paths != null );
+        assert ( missingDependencies != null );
         assert ( modeler != null );
 
         if ( !modelNode.hasProperty( ModelerLexicon.EXTERNAL_LOCATION )
              || !modelNode.hasProperty( ModelerLexicon.MODEL_TYPE )
-             || paths.isEmpty() ) {
+             || missingDependencies.isEmpty() ) {
             return;
         }
 
-        final String sourceName = modelNode.getParent().getName();
-        final String externalLocation = modelNode.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString();
+        final String modelName = modelNode.getName();
+        final String type = modelNode.getProperty( ModelerLexicon.MODEL_TYPE ).getString();
+        final ModelType modelType = modeler.modelTypeManager().modelType( type );
 
-        for ( final String dependencyPath : paths ) {
-            final String extPath = externalLocation + dependencyPath;
+        String externalLocation = modelNode.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString();
+        externalLocation = externalLocation.substring( 0, ( externalLocation.lastIndexOf( "/" ) ) );
+
+        final String artifactDir = artifactPath.substring( 0, ( artifactPath.lastIndexOf( "/" ) ) );
+
+        for ( final MissingDependency missingDependency : missingDependencies ) {
+            String artifactLocation = artifactDir;
+            String location = externalLocation;
+            int numParentDirs = missingDependency.numParentDirs;
+
+            // navigate up parent dirs if necessary
+            while ( numParentDirs > 0 ) {
+                location = location.substring( 0, ( externalLocation.lastIndexOf( "/" ) ) );
+                artifactLocation = artifactLocation.substring( 0, ( artifactLocation.lastIndexOf( "/" ) ) );
+                --numParentDirs;
+            }
+
+            // setup external path
+            String extPath = location;
+
+            if ( !extPath.endsWith( "/" ) ) {
+                extPath += '/';
+            }
+
+            extPath += missingDependency.relativePath;
+
+            // setup dependency artifact path
+            if ( !artifactLocation.endsWith( "/" ) ) {
+                artifactLocation += "/";
+            }
+
+            artifactLocation += missingDependency.relativePath;
 
             try {
-                // upload
-                // TODO implement uploadMissingDependencies
-                // LOGGER.debug( "Importing XSD dependency from external path '%s' for source '%s'", extPath, sourceName );
-                // final String artifactPath = modeler.importArtifact( new URL( extPath ).openStream(), dependencyPath );
-                //
-                // // create model
-                // LOGGER.debug( "Generating model for XSD dependency of model '%s' from path '%s'", sourceName, extPath );
-                // final String type = modelNode.getSession().getNode( dependencyPath ).getProperty( ModelerLexicon.MODEL_TYPE
-                // ).getString();
-                // final ModelType modelType = modeler.modelTypeManager().modelType( type );
-                // modeler.generateModel( artifactPath, dependencyPath, modelType );
+                LOGGER.debug( "Importing XSD dependency from external path '%s' for source '%s' and path '%s'", extPath, modelName, artifactLocation );
+                final String dependencyArtifactPath = modeler.importArtifact( new URL( extPath ).openStream(), artifactLocation );
+
+                // create model
+                final String modelPath = ( missingDependency.modelParentPath + missingDependency.relativePath );
+                LOGGER.debug( "Generating model for XSD dependency of model '%s' from path '%s'", modelName, modelPath );
+                modeler.generateModel( dependencyArtifactPath, modelPath, modelType );
             } catch ( final Exception e ) {
-                LOGGER.error( e, XsdModelerI18n.errorImportingXsdDependencyArtifact, extPath, sourceName );
+                LOGGER.error( e, XsdModelerI18n.errorImportingXsdDependencyArtifact, extPath, modelName );
             }
         }
     }
+
+    private static class MissingDependency {
+
+        final String modelParentPath;
+        final int numParentDirs;
+        final String relativePath;
+
+        MissingDependency( final String relativePath,
+                           final int numParentDirs,
+                           final String modelParentPath ) {
+            this.relativePath = relativePath;
+            this.numParentDirs = numParentDirs;
+            this.modelParentPath = modelParentPath;
+        }
+
+    }
+
 }

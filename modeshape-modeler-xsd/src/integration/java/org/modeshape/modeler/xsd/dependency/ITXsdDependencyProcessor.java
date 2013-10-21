@@ -27,11 +27,13 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.net.URL;
 
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.Session;
 
 import org.junit.Test;
@@ -71,14 +73,14 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
         assertThat( path, is( "/music.xsd" ) );
 
         final ModelType xsdModelType = xsdModelType();
-        final ModelImpl model = ( ModelImpl ) modeler().generateModel( path, ARTIFACT_NAME, xsdModelType );
+        final ModelImpl model = ( ModelImpl ) modeler().generateModel( path, MODEL_NAME, xsdModelType );
 
         manager().run( new Task< Node >() {
 
             @Override
             public Node run( final Session session ) throws Exception {
                 final Node modelNode = session.getNode( model.absolutePath() );
-                final String dependenciesPath = processor.process( modelNode, modeler() );
+                final String dependenciesPath = processor.process( path, modelNode, modeler() );
                 assertThat( dependenciesPath, nullValue() );
 
                 return null;
@@ -87,32 +89,85 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
     }
 
     @Test
-    public void shouldSetDependencyPathsOfBooksXsd() throws Exception {
-        final URL xsdUrl = getClass().getClassLoader().getResource( "Books/Books.xsd" );
-        final String path = modeler().importFile( new File( xsdUrl.toURI() ), null );
-        assertThat( path, is( "/Books.xsd" ) );
+    public void shouldProcessBooksSoapEncodingXsd() throws Exception {
+        final URL xsdUrl = getClass().getClassLoader().getResource( "Books/SOAP/BooksWithSOAPEncoding.xsd" );
+        final String artifactPath = modeler().importFile( new File( xsdUrl.toURI() ), "Artifact/Books/SOAP" );
+        assertThat( artifactPath, is( "/Artifact/Books/SOAP/BooksWithSOAPEncoding.xsd" ) );
 
         final ModelType xsdModelType = xsdModelType();
-        final ModelImpl model = ( ModelImpl ) modeler().generateModel( path, ARTIFACT_NAME, xsdModelType );
+        final String modelPath = "Model/Books/SOAP/BooksWithSOAPEncoding.xsd";
+        final ModelImpl model = ( ModelImpl ) modeler().generateModel( artifactPath, modelPath, xsdModelType );
 
         manager().run( new Task< Node >() {
 
             @Override
             public Node run( final Session session ) throws Exception {
                 final Node modelNode = session.getNode( model.absolutePath() );
-                final String dependenciesPath = processor.process( modelNode, modeler() );
+                final String dependenciesPath = processor.process( artifactPath, modelNode, modeler() );
                 assertThat( dependenciesPath, notNullValue() );
 
                 final Node dependenciesNode = session.getNode( dependenciesPath );
-                assertThat( dependenciesNode.getNodes().getSize(), is( 1L ) );
+                assertThat( dependenciesNode.getNodes().getSize(), is( 2L ) );
 
-                final Node dependencyNode = dependenciesNode.getNodes().nextNode();
-                assertThat( dependencyNode.getPrimaryNodeType().getName(), is( ModelerLexicon.DEPENDENCY ) );
-                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH ).getString(), is( "/data/types/BookDatatypes.xsd" ) );
+                final NodeIterator itr = dependenciesNode.getNodes();
 
-                final String input =
-                    dependencyNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues()[ 0 ].getString();
-                assertThat( input, is( "../data/types/BookDatatypes.xsd" ) );
+                final String dataTypesArtifactPath = "/Artifact/Books/data/types/BookDatatypes.xsd";
+                final String dataTypesModelPath = "/Model/Books/data/types/BookDatatypes.xsd";
+                final String dataTypesSourceRef = "../data/types/BookDatatypes.xsd";
+
+                final String soapEncodingArtifactPath = "/Artifact/Books/SOAP/encoding/soap_encoding.xsd";
+                final String soapEncodingModelPath = "/Model/Books/SOAP/encoding/soap_encoding.xsd";
+                final String soapEncodingSourceRef = "./encoding/soap_encoding.xsd";
+
+                final Node depOneNode = itr.nextNode();
+                assertThat( depOneNode.getPrimaryNodeType().getName(), is( ModelerLexicon.DEPENDENCY ) );
+
+                final Node depTwoNode = itr.nextNode();
+                assertThat( depOneNode.getPrimaryNodeType().getName(), is( ModelerLexicon.DEPENDENCY ) );
+
+                if ( depOneNode.getProperty( ModelerLexicon.PATH ).getString().equals( dataTypesModelPath ) ) {
+                    { // first dependency node is datatypes
+                        final String input =
+                            depOneNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues()[ 0 ].getString();
+                        assertThat( input, is( dataTypesSourceRef ) );
+
+                        // make sure dependency resource was imported and model created (getNode throws exception if path not found)
+                        session.getNode( dataTypesArtifactPath );
+                        session.getNode( dataTypesModelPath );
+                    }
+
+                    { // dependency two must be soap encoding
+                        final String input =
+                            depTwoNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues()[ 0 ].getString();
+                        assertThat( input, is( soapEncodingSourceRef ) );
+
+                        // make sure dependency resource was imported and model created (getNode throws exception if path not found)
+                        session.getNode( soapEncodingArtifactPath );
+                        session.getNode( soapEncodingModelPath );
+                    }
+                } else if ( depOneNode.getProperty( ModelerLexicon.PATH ).getString().equals( soapEncodingModelPath ) ) {
+                    { // first dependency is soap encoding
+                        final String input =
+                            depOneNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues()[ 0 ].getString();
+                        assertThat( input, is( soapEncodingSourceRef ) );
+
+                        // make sure dependency resource was imported and model created (getNode throws exception if path not found)
+                        session.getNode( soapEncodingArtifactPath );
+                        session.getNode( soapEncodingModelPath );
+                    }
+
+                    { // dependency two must be datatypes
+                        final String input =
+                            depTwoNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues()[ 0 ].getString();
+                        assertThat( input, is( dataTypesSourceRef ) );
+
+                        // make sure dependency resource was imported and model created (getNode throws exception if path not found)
+                        session.getNode( dataTypesArtifactPath );
+                        session.getNode( dataTypesModelPath );
+                    }
+                } else {
+                    fail( "path=" + depOneNode.getProperty( ModelerLexicon.PATH ).getString() );
+                }
 
                 return null;
             }
@@ -120,20 +175,20 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
     }
 
     @Test
-    public void shouldSetDependencyPathsOfMoviesXsd() throws Exception {
-        final URL xsdUrl = getClass().getClassLoader().getResource( "Movies/Movies.xsd" );
-        final String path = modeler().importFile( new File( xsdUrl.toURI() ), null );
-        assertThat( path, is( "/Movies.xsd" ) );
+    public void shouldProcessBooksXsd() throws Exception {
+        final URL xsdUrl = getClass().getClassLoader().getResource( "Books/Books.xsd" );
+        final String artifactPath = modeler().importFile( new File( xsdUrl.toURI() ), "Artifact/Books" );
+        assertThat( artifactPath, is( "/Artifact/Books/Books.xsd" ) );
 
         final ModelType xsdModelType = xsdModelType();
-        final ModelImpl model = ( ModelImpl ) modeler().generateModel( path, ARTIFACT_NAME, xsdModelType );
+        final ModelImpl model = ( ModelImpl ) modeler().generateModel( artifactPath, "Model/Books/Books.xsd", xsdModelType );
 
         manager().run( new Task< Node >() {
 
             @Override
             public Node run( final Session session ) throws Exception {
                 final Node modelNode = session.getNode( model.absolutePath() );
-                final String dependenciesPath = processor.process( modelNode, modeler() );
+                final String dependenciesPath = processor.process( artifactPath, modelNode, modeler() );
                 assertThat( dependenciesPath, notNullValue() );
 
                 final Node dependenciesNode = session.getNode( dependenciesPath );
@@ -141,11 +196,56 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
 
                 final Node dependencyNode = dependenciesNode.getNodes().nextNode();
                 assertThat( dependencyNode.getPrimaryNodeType().getName(), is( ModelerLexicon.DEPENDENCY ) );
-                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH ).getString(), is( model.absolutePath() + "/MovieDatatypes.xsd" ) );
+
+                final String dependencyPath = "/Model/Books/data/types/BookDatatypes.xsd";
+                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH ).getString(), is( dependencyPath ) );
+
+                final String input =
+                    dependencyNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues()[ 0 ].getString();
+                assertThat( input, is( "./data/types/BookDatatypes.xsd" ) );
+
+                // make sure dependency resource was imported and model created (getNode throws exception if path not found)
+                session.getNode( "/Artifact/Books/data/types/BookDatatypes.xsd" );
+                session.getNode( dependencyPath );
+
+                return null;
+            }
+        } );
+    }
+
+    @Test
+    public void shouldProcessMoviesXsd() throws Exception {
+        final URL xsdUrl = getClass().getClassLoader().getResource( "Movies/Movies.xsd" );
+        final String artifactPath = modeler().importFile( new File( xsdUrl.toURI() ), null );
+        assertThat( artifactPath, is( "/Movies.xsd" ) );
+
+        final ModelType xsdModelType = xsdModelType();
+        final ModelImpl model = ( ModelImpl ) modeler().generateModel( artifactPath, "Model/Movies.xsd", xsdModelType );
+
+        manager().run( new Task< Node >() {
+
+            @Override
+            public Node run( final Session session ) throws Exception {
+                final Node modelNode = session.getNode( model.absolutePath() );
+                final String dependenciesPath = processor.process( artifactPath, modelNode, modeler() );
+                assertThat( dependenciesPath, notNullValue() );
+
+                final Node dependenciesNode = session.getNode( dependenciesPath );
+                assertThat( dependenciesNode.getNodes().getSize(), is( 1L ) );
+
+                final Node dependencyNode = dependenciesNode.getNodes().nextNode();
+                assertThat( dependencyNode.getPrimaryNodeType().getName(), is( ModelerLexicon.DEPENDENCY ) );
+
+                final String dependencyPath = "/Model/MovieDatatypes.xsd";
+                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH ).getString(), is( dependencyPath ) );
 
                 final String input =
                     dependencyNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues()[ 0 ].getString();
                 assertThat( input, is( "MovieDatatypes.xsd" ) );
+
+                // make sure dependency resource was imported and model created (getNode throws exception if path not found)
+                session.getNode( dependencyPath );
+                session.getNode( "/MovieDatatypes.xsd" );
 
                 return null;
             }
