@@ -44,6 +44,8 @@ public interface DependencyProcessor {
     String SELF_PATH = ".";
 
     /**
+     * @param artifactPath
+     *        the workspace path of the artifact whose dependencies are being processed
      * @param modelNode
      *        the node of the model whose dependencies are being processed (cannot be <code>null</code>)
      * @param modeler
@@ -52,7 +54,8 @@ public interface DependencyProcessor {
      * @throws ModelerException
      *         if the specified model is not valid for this processor or if there is an error during processing
      */
-    String process( final Node modelNode,
+    String process( final String artifactPath,
+                    final Node modelNode,
                     final Modeler modeler ) throws ModelerException;
 
 }
