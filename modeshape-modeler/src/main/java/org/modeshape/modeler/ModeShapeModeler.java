@@ -156,7 +156,7 @@ public final class ModeShapeModeler implements Modeler {
     @Override
     public Model generateDefaultModel( final String artifactPath,
                                        final String modelPath ) throws ModelerException {
-        return generateModel( artifactPath, modelPath, null );
+        return generateModel( artifactPath, modelPath, null, true );
     }
 
     /**
@@ -199,70 +199,77 @@ public final class ModeShapeModeler implements Modeler {
                                 final String modelPath,
                                 final ModelType modelType ) throws ModelerException {
         final String artifactPath = importArtifact( stream, ModelerLexicon.TEMP_FOLDER + "/file" );
-        final Model model = generateModel( artifactPath, modelPath, modelType );
-        removeTemporaryArtifact( artifactPath );
-        return model;
+        return generateModel( artifactPath, modelPath, modelType, false );
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see Modeler#generateModel(String, String, ModelType)
+     * @see org.modeshape.modeler.Modeler#generateModel(java.lang.String, java.lang.String, org.modeshape.modeler.ModelType,
+     *      boolean)
      */
     @Override
     public Model generateModel( final String artifactPath,
                                 final String modelPath,
-                                final ModelType modelType ) throws ModelerException {
+                                final ModelType modelType,
+                                final boolean persistArtifact ) throws ModelerException {
         CheckArg.isNotEmpty( artifactPath, "artifactPath" );
         CheckArg.isNotEmpty( modelPath, "modelPath" );
-        return manager.run( new Task< Model >() {
 
-            @Override
-            public Model run( final Session session ) throws Exception {
-                final Node artifactNode = manager.artifactNode( session, artifactPath );
-                ModelType type = modelType;
-                if ( modelType == null ) {
-                    // If no model type supplied, use default model type if one exists
-                    type = manager.modelTypeManager().defaultModelType( artifactNode,
-                                                                        manager.modelTypeManager().modelTypes( artifactNode ) );
-                    if ( type == null )
-                        throw new IllegalArgumentException( ModelerI18n.unableToDetermineDefaultModelType.text( artifactPath ) );
-                    throw new UnsupportedOperationException( "Not yet implemented" );
+        try {
+            return manager.run( new Task< Model >() {
+
+                @Override
+                public Model run( final Session session ) throws Exception {
+                    final Node artifactNode = manager.artifactNode( session, artifactPath );
+                    ModelType type = modelType;
+                    if ( modelType == null ) {
+                        // If no model type supplied, use default model type if one exists
+                        type = manager.modelTypeManager().defaultModelType( artifactNode,
+                                                                            manager.modelTypeManager().modelTypes( artifactNode ) );
+                        if ( type == null )
+                            throw new IllegalArgumentException( ModelerI18n.unableToDetermineDefaultModelType.text( artifactPath ) );
+                        throw new UnsupportedOperationException( "Not yet implemented" );
+                    }
+                    // Build the model
+                    final ValueFactory valueFactory = ( ValueFactory ) session.getValueFactory();
+                    final Calendar cal = Calendar.getInstance();
+                    final ModelTypeImpl modelType = ( ModelTypeImpl ) type;
+                    final Node modelNode = new JcrTools().findOrCreateNode( session, absolutePath( modelPath ) );
+                    modelNode.addMixin( ModelerLexicon.MODEL_MIXIN );
+                    if ( artifactNode.hasProperty( ModelerLexicon.EXTERNAL_LOCATION ) )
+                        modelNode.setProperty( ModelerLexicon.EXTERNAL_LOCATION,
+                                               artifactNode.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString() );
+                    final boolean save = modelType.sequencer().execute( artifactNode.getNode( JcrLexicon.CONTENT.getString() )
+                                                                                    .getProperty( JcrLexicon.DATA.getString() ),
+                                                                        modelNode,
+                                                                        new Sequencer.Context() {
+
+                                                                            @Override
+                                                                            public Calendar getTimestamp() {
+                                                                                return cal;
+                                                                            }
+
+                                                                            @Override
+                                                                            public ValueFactory valueFactory() {
+                                                                                return valueFactory;
+                                                                            }
+                                                                        } );
+                    if ( save ) {
+                        modelNode.setProperty( ModelerLexicon.MODEL_TYPE, modelType.id() );
+                        final ModelImpl model = new ModelImpl( manager, modelNode.getPath() );
+                        session.save();
+                        processDependencies( artifactPath, modelNode, model, persistArtifact );
+                        return model;
+                    }
+                    throw new ModelerException( ModelerI18n.sessionNotSavedWhenCreatingModel, artifactPath );
                 }
-                // Build the model
-                final ValueFactory valueFactory = ( ValueFactory ) session.getValueFactory();
-                final Calendar cal = Calendar.getInstance();
-                final ModelTypeImpl modelType = ( ModelTypeImpl ) type;
-                final Node modelNode = new JcrTools().findOrCreateNode( session, absolutePath( modelPath ) );
-                modelNode.addMixin( ModelerLexicon.MODEL_MIXIN );
-                if ( artifactNode.hasProperty( ModelerLexicon.EXTERNAL_LOCATION ) )
-                    modelNode.setProperty( ModelerLexicon.EXTERNAL_LOCATION,
-                                           artifactNode.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString() );
-                final boolean save = modelType.sequencer().execute( artifactNode.getNode( JcrLexicon.CONTENT.getString() )
-                                                                                .getProperty( JcrLexicon.DATA.getString() ),
-                                                                    modelNode,
-                                                                    new Sequencer.Context() {
-
-                                                                        @Override
-                                                                        public Calendar getTimestamp() {
-                                                                            return cal;
-                                                                        }
-
-                                                                        @Override
-                                                                        public ValueFactory valueFactory() {
-                                                                            return valueFactory;
-                                                                        }
-                                                                    } );
-                if ( save ) {
-                    modelNode.setProperty( ModelerLexicon.MODEL_TYPE, modelType.id() );
-                    final ModelImpl model = new ModelImpl( manager, modelNode.getPath() );
-                    session.save();
-                    processDependencies( artifactPath, modelNode, model );
-                    return model;
-                }
-                throw new ModelerException( ModelerI18n.sessionNotSavedWhenCreatingModel, artifactPath );
+            } );
+        } finally {
+            if ( !persistArtifact ) {
+                removeTemporaryArtifact( artifactPath );
             }
-        } );
+        }
     }
 
     /**
@@ -288,9 +295,7 @@ public final class ModeShapeModeler implements Modeler {
                                 final String modelName,
                                 final ModelType modelType ) throws ModelerException {
         final String artifactPath = importArtifact( artifactUrl, ModelerLexicon.TEMP_FOLDER );
-        final Model model = generateModel( artifactPath, absolutePath( modelFolder, name( modelName, artifactUrl ) ), modelType );
-        removeTemporaryArtifact( artifactPath );
-        return model;
+        return generateModel( artifactPath, absolutePath( modelFolder, name( modelName, artifactUrl ) ), modelType, false );
     }
 
     /**
@@ -432,12 +437,13 @@ public final class ModeShapeModeler implements Modeler {
 
     void processDependencies( final String artifactPath,
                               final Node modelNode,
-                              final ModelImpl model ) throws Exception {
+                              final ModelImpl model,
+                              final boolean persistArtifacts ) throws Exception {
         final DependencyProcessor dependencyProcessor = model.dependencyProcessor();
         if ( dependencyProcessor == null ) {
             Logger.getLogger( getClass() ).debug( "No dependency processor found for model '%s'", modelNode.getName() );
         } else {
-            dependencyProcessor.process( artifactPath, modelNode, this );
+            dependencyProcessor.process( artifactPath, modelNode, this, persistArtifacts );
         }
     }
 

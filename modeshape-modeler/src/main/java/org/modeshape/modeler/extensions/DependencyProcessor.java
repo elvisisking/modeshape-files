@@ -50,12 +50,15 @@ public interface DependencyProcessor {
      *        the node of the model whose dependencies are being processed (cannot be <code>null</code>)
      * @param modeler
      *        the modeler used to upload dependency artifacts and create models (cannot be <code>null</code>)
+     * @param persistArtifacts
+     *        <code>true</code> if the auto-imported dependency artifacts should be persisted
      * @return the path to the dependencies node or <code>null</code> if no dependencies were processed
      * @throws ModelerException
      *         if the specified model is not valid for this processor or if there is an error during processing
      */
     String process( final String artifactPath,
                     final Node modelNode,
-                    final Modeler modeler ) throws ModelerException;
+                    final Modeler modeler,
+                    final boolean persistArtifacts ) throws ModelerException;
 
 }
