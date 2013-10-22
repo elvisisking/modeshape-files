@@ -73,14 +73,14 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
         assertThat( path, is( "/music.xsd" ) );
 
         final ModelType xsdModelType = xsdModelType();
-        final ModelImpl model = ( ModelImpl ) modeler().generateModel( path, MODEL_NAME, xsdModelType );
+        final ModelImpl model = ( ModelImpl ) modeler().generateModel( path, MODEL_NAME, xsdModelType, true );
 
         manager().run( new Task< Node >() {
 
             @Override
             public Node run( final Session session ) throws Exception {
                 final Node modelNode = session.getNode( model.absolutePath() );
-                final String dependenciesPath = processor.process( path, modelNode, modeler() );
+                final String dependenciesPath = processor.process( path, modelNode, modeler(), true );
                 assertThat( dependenciesPath, nullValue() );
 
                 return null;
@@ -96,14 +96,14 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
 
         final ModelType xsdModelType = xsdModelType();
         final String modelPath = "Model/Books/SOAP/BooksWithSOAPEncoding.xsd";
-        final ModelImpl model = ( ModelImpl ) modeler().generateModel( artifactPath, modelPath, xsdModelType );
+        final ModelImpl model = ( ModelImpl ) modeler().generateModel( artifactPath, modelPath, xsdModelType, true );
 
         manager().run( new Task< Node >() {
 
             @Override
             public Node run( final Session session ) throws Exception {
                 final Node modelNode = session.getNode( model.absolutePath() );
-                final String dependenciesPath = processor.process( artifactPath, modelNode, modeler() );
+                final String dependenciesPath = processor.process( artifactPath, modelNode, modeler(), true );
                 assertThat( dependenciesPath, notNullValue() );
 
                 final Node dependenciesNode = session.getNode( dependenciesPath );
@@ -181,14 +181,14 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
         assertThat( artifactPath, is( "/Artifact/Books/Books.xsd" ) );
 
         final ModelType xsdModelType = xsdModelType();
-        final ModelImpl model = ( ModelImpl ) modeler().generateModel( artifactPath, "Model/Books/Books.xsd", xsdModelType );
+        final ModelImpl model = ( ModelImpl ) modeler().generateModel( artifactPath, "Model/Books/Books.xsd", xsdModelType, true );
 
         manager().run( new Task< Node >() {
 
             @Override
             public Node run( final Session session ) throws Exception {
                 final Node modelNode = session.getNode( model.absolutePath() );
-                final String dependenciesPath = processor.process( artifactPath, modelNode, modeler() );
+                final String dependenciesPath = processor.process( artifactPath, modelNode, modeler(), true );
                 assertThat( dependenciesPath, notNullValue() );
 
                 final Node dependenciesNode = session.getNode( dependenciesPath );
@@ -214,20 +214,53 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
     }
 
     @Test
-    public void shouldProcessMoviesXsd() throws Exception {
-        final URL xsdUrl = getClass().getClassLoader().getResource( "Movies/Movies.xsd" );
+    public void shouldProcessDependencyWithInvalidRelativePath() throws Exception {
+        final URL xsdUrl = getClass().getClassLoader().getResource( "Books/SOAP/BooksWithSOAPEncoding.xsd" );
         final String artifactPath = modeler().importFile( new File( xsdUrl.toURI() ), null );
-        assertThat( artifactPath, is( "/Movies.xsd" ) );
 
         final ModelType xsdModelType = xsdModelType();
-        final ModelImpl model = ( ModelImpl ) modeler().generateModel( artifactPath, "Model/Movies.xsd", xsdModelType );
+
+        // relative path of ../data/types/BookDatatypes.xsd dependency is not valid since there is no parent folder
+        final ModelImpl model = ( ModelImpl ) modeler().generateModel( artifactPath, "Books.xsd", xsdModelType, true );
 
         manager().run( new Task< Node >() {
 
             @Override
             public Node run( final Session session ) throws Exception {
                 final Node modelNode = session.getNode( model.absolutePath() );
-                final String dependenciesPath = processor.process( artifactPath, modelNode, modeler() );
+                final String dependenciesPath = processor.process( artifactPath, modelNode, modeler(), true );
+                assertThat( dependenciesPath, notNullValue() );
+
+                final Node dependenciesNode = session.getNode( dependenciesPath );
+                assertThat( dependenciesNode.getNodes().getSize(), is( 2L ) );
+
+                // the node with the invalid relative path should not have its path set
+                final NodeIterator itr = dependenciesNode.getNodes();
+
+                if ( itr.nextNode().hasProperty( ModelerLexicon.PATH ) && itr.nextNode().hasProperty( ModelerLexicon.PATH ) ) {
+                    fail( "Invalid dependency relative path should not have a path property on its dependency node" );
+                }
+
+                return null;
+            }
+        } );
+    }
+
+    @Test
+    public void shouldProcessMoviesXsd() throws Exception {
+        final URL xsdUrl = getClass().getClassLoader().getResource( "Movies/Movies.xsd" );
+        final String artifactPath = modeler().importFile( new File( xsdUrl.toURI() ), null );
+        assertThat( artifactPath, is( "/Movies.xsd" ) );
+
+        final ModelType xsdModelType = xsdModelType();
+        final ModelImpl model = ( ModelImpl ) modeler().generateModel( artifactPath, "Model/Movies.xsd", xsdModelType, true );
+
+        manager().run( new Task< Node >() {
+
+            @Override
+            public Node run( final Session session ) throws Exception {
+                final Node modelNode = session.getNode( model.absolutePath() );
+                final String dependenciesPath = processor.process( artifactPath, modelNode, modeler(), true );
                 assertThat( dependenciesPath, notNullValue() );
 
                 final Node dependenciesNode = session.getNode( dependenciesPath );

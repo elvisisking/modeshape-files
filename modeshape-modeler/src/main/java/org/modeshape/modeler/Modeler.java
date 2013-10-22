@@ -143,13 +143,16 @@ public interface Modeler extends AutoCloseable {
      *        the path where the model should be created
      * @param modelType
      *        the type of model to be created for the supplied artifact; may be <code>null</code>.
+     * @param persistArtifacts
+     *        <code>true</code> if auto-imported dependency artifacts should be persisted
      * @return a new model of the supplied type; never <code>null</code>
      * @throws ModelerException
      *         if any problem occurs
      */
     Model generateModel( final String artifactPath,
                          final String modelPath,
-                         final ModelType modelType ) throws ModelerException;
+                         final ModelType modelType,
+                         final boolean persistArtifacts ) throws ModelerException;
 
     /**
      * @param artifactUrl

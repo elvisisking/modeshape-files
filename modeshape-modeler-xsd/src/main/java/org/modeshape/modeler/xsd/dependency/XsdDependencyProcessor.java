@@ -85,12 +85,13 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
      * {@inheritDoc}
      * 
      * @see org.modeshape.modeler.extensions.DependencyProcessor#process(java.lang.String, javax.jcr.Node,
-     *      org.modeshape.modeler.Modeler)
+     *      org.modeshape.modeler.Modeler, boolean)
      */
     @Override
     public String process( final String artifactPath,
                            final Node modelNode,
-                           final Modeler modeler ) throws ModelerException {
+                           final Modeler modeler,
+                           final boolean persistArtifacts ) throws ModelerException {
         Node dependenciesNode = null;
         List< MissingDependency > pathsToMissingDependencies = null;
 
@@ -127,6 +128,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
             pathsToMissingDependencies = new ArrayList<>();
 
             // find the dependency nodes
+            DEPENDENCIES:
             while ( itr.hasNext() ) {
                 final Node kid = itr.nextNode();
 
@@ -163,7 +165,8 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                         if ( path.startsWith( PARENT_PATH ) ) {
                             // if root node there is no parent
                             if ( node.getDepth() == 0 ) {
-                                throw new ModelerException( XsdModelerI18n.relativePathNotValid, path, modelName );
+                                LOGGER.debug( "The relative path of '%s' is not valid for a dependency node of model '%s'", path, modelName );
+                                continue DEPENDENCIES;
                             }
 
                             node = node.getParent();
@@ -201,7 +204,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
 
             // process any missing dependencies
             if ( !pathsToMissingDependencies.isEmpty() ) {
-                uploadMissingDependencies( artifactPath, modelNode, pathsToMissingDependencies, modeler );
+                uploadMissingDependencies( artifactPath, modelNode, pathsToMissingDependencies, modeler, persistArtifacts );
             }
 
             modelNode.getSession().save();
@@ -214,7 +217,8 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
     void uploadMissingDependencies( final String artifactPath,
                                     final Node modelNode,
                                     final List< MissingDependency > missingDependencies,
-                                    final Modeler modeler ) throws Exception {
+                                    final Modeler modeler,
+                                    final boolean persistArtifacts ) throws Exception {
         assert ( modelNode != null );
         assert ( missingDependencies != null );
         assert ( modeler != null );
@@ -269,7 +273,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                 // create model
                 final String modelPath = ( missingDependency.modelParentPath + missingDependency.relativePath );
                 LOGGER.debug( "Generating model for XSD dependency of model '%s' from path '%s'", modelName, modelPath );
-                modeler.generateModel( dependencyArtifactPath, modelPath, modelType );
+                modeler.generateModel( dependencyArtifactPath, modelPath, modelType, persistArtifacts );
             } catch ( final Exception e ) {
                 LOGGER.error( e, XsdModelerI18n.errorImportingXsdDependencyArtifact, extPath, modelName );
             }

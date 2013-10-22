@@ -43,6 +43,35 @@ public class ITModeler extends BaseIntegrationTest {
     private static final String XSD_MODEL_TYPE_ID = "org.modeshape.modeler.xsd.Xsd";
 
     @Test
+    public void shouldDeleteTemporaryArtifactAfterGeneratingModel() throws Exception {
+        modelTypeManager().install( "xml" );
+        modelTypeManager().install( "sramp" );
+        modelTypeManager().install( "xsd" );
+
+        final String path = importArtifact( XSD_ARTIFACT );
+        ModelType modelType = null;
+
+        for ( final ModelType type : modelTypeManager().modelTypesForArtifact( path ) ) {
+            if ( type.id().equals( XSD_MODEL_TYPE_ID ) ) {
+                modelType = type;
+                break;
+            }
+        }
+
+        final Model model = modeler().generateModel( path, ARTIFACT_NAME, modelType, false );
+        assertThat( model, notNullValue() );
+
+        manager().run( new Task< Void >() {
+
+            @Override
+            public Void run( final Session session ) throws Exception {
+                assertThat( session.getRootNode().hasNode( ARTIFACT_NAME ), is( false ) );
+                return null;
+            }
+        } );
+    }
+
+    @Test
     public void shouldExportToFile() throws Exception {
         assertThat( modelTypeManager().install( "java" ).length == 0, is( true ) );
         final String name = ModelImpl.class.getName();
@@ -58,7 +87,7 @@ public class ITModeler extends BaseIntegrationTest {
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
         modelTypeManager().install( "xml" );
-        modeler().generateModel( importArtifact( "stuff" ), ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
+        modeler().generateModel( importArtifact( "stuff" ), ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_ID ), true );
     }
 
     @Test( expected = ModelerException.class )
@@ -66,7 +95,7 @@ public class ITModeler extends BaseIntegrationTest {
         modelTypeManager().install( "xml" );
         modeler().generateModel( importArtifact( XML_DECLARATION + "<stuff>" ),
                                  ARTIFACT_NAME,
-                                 modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
+                                 modelTypeManager().modelType( XML_MODEL_TYPE_ID ), true );
     }
 
     @Test
@@ -82,7 +111,7 @@ public class ITModeler extends BaseIntegrationTest {
                 break;
             }
         }
-        final Model model = modeler().generateModel( path, ARTIFACT_NAME, modelType );
+        final Model model = modeler().generateModel( path, ARTIFACT_NAME, modelType, true );
         assertThat( model, notNullValue() );
         manager().run( new Task< Void >() {
 
@@ -112,7 +141,7 @@ public class ITModeler extends BaseIntegrationTest {
         assertThat( xsdModelType, notNullValue() );
 
         final String path = importArtifact( XSD_ARTIFACT );
-        final ModelImpl model = ( ModelImpl ) modeler().generateModel( path, ARTIFACT_NAME, xsdModelType );
+        final ModelImpl model = ( ModelImpl ) modeler().generateModel( path, ARTIFACT_NAME, xsdModelType, true );
         modeler().manager.run( new Task< Void >() {
 
             @Override

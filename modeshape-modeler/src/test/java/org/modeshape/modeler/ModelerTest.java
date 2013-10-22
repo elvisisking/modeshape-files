@@ -122,17 +122,17 @@ public final class ModelerTest extends BaseTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGenerateModelFromWorkspaceArtifactIfArtifactPathNull() throws Exception {
-        failingModeler.generateModel( ( String ) null, ARTIFACT_NAME, modelType );
+        failingModeler.generateModel( ( String ) null, ARTIFACT_NAME, modelType, true );
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGenerateModelIfArtifactPathEmpty() throws Exception {
-        failingModeler.generateModel( " ", ARTIFACT_NAME, modelType );
+        failingModeler.generateModel( " ", ARTIFACT_NAME, modelType, true );
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGenerateModelIfArtifactPathNotFound() throws Exception {
-        modeler().generateModel( "doesNotExist", ARTIFACT_NAME, modelType );
+        modeler().generateModel( "doesNotExist", ARTIFACT_NAME, modelType, true );
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -261,7 +261,7 @@ public final class ModelerTest extends BaseTest {
     public void shouldGenerateModelFromWorkspaceArtifact() throws Exception {
         modelTypeManager().install( "xml" );
         final String path = modeler().importArtifact( stream( XML_ARTIFACT ), ARTIFACT_NAME );
-        final Model model = modeler().generateModel( path, ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_ID ) );
+        final Model model = modeler().generateModel( path, ARTIFACT_NAME, modelTypeManager().modelType( XML_MODEL_TYPE_ID ), true );
         assertThat( model, notNullValue() );
     }
 
