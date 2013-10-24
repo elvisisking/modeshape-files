@@ -32,7 +32,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 
-import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.ModelerException;
@@ -61,17 +61,25 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
         return uri.toString();
     }
 
-    /**
-     * @param input
-     *        the text being checked (cannot be <code>null</code> or empty)
-     * @return true if the text represents a URI that is not absolute
-     * @throws Exception
-     *         if input is empty or not in a valid format
-     */
-    private static boolean pathIsRelative( final String input ) throws Exception {
-        CheckArg.isNotEmpty( input, "input" );
-        final URI uri = new URI( input ).normalize();
-        return !uri.isAbsolute();
+    private static boolean pathIsRelative( final String path ) throws Exception {
+        assert ( ( path != null ) && !path.isEmpty() );
+
+        if ( path.startsWith( "/" ) ) {
+            return false;
+        }
+
+        if ( path.startsWith( PARENT_PATH ) || path.startsWith( SELF_PATH ) ) {
+            return true;
+        }
+
+        final URI uri = new URI( path ).normalize();
+        final String scheme = uri.getScheme();
+
+        if ( StringUtil.isBlank( scheme ) ) {
+            return true;
+        }
+
+        return false;
     }
 
     private boolean dependencyNode( final Node node ) throws Exception {
@@ -157,10 +165,11 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                 // derive path using model node parent as starting point
                 Node node = modelNode.getParent();
                 String path = normalizePath( location );
-                boolean exists = false;
-                int count = 0;
+                LOGGER.debug( "Normalized schema location is '%s'", path );
 
                 if ( pathIsRelative( path ) ) {
+                    int count = 0;
+
                     while ( path.startsWith( SELF_PATH ) || path.startsWith( PARENT_PATH ) ) {
                         if ( path.startsWith( PARENT_PATH ) ) {
                             // if root node there is no parent
@@ -177,24 +186,97 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                         }
                     }
 
-                    exists = node.hasNode( path );
+                    String parentModelPath = node.getPath();
+
+                    if ( !parentModelPath.endsWith( "/" ) ) {
+                        parentModelPath += "/";
+                    }
+
+                    final String fullModelPath = parentModelPath + path;
+                    dependencyNode.setProperty( ModelerLexicon.PATH, fullModelPath );
+                    LOGGER.debug( "Setting dependency path property to '%s'", fullModelPath );
+
+                    final boolean exists = node.hasNode( path );
+
+                    if ( !exists ) {
+                        final MissingDependency md = new MissingDependency( path, count, parentModelPath );
+                        pathsToMissingDependencies.add( md );
+                    }
                 } else {
-                    // TODO need more path analysis to include the original path property
-                }
+                    LOGGER.debug( "Found absolute dependency path '%s'", path );
 
-                String parentModelPath = node.getPath();
+                    // find common part of path and external location to determine workspace location
+                    if ( modelNode.hasProperty( ModelerLexicon.EXTERNAL_LOCATION ) ) {
+                        String extLocation = modelNode.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString();
+                        extLocation = normalizePath( extLocation );
+                        extLocation = extLocation.substring( 0, extLocation.lastIndexOf( "/" ) );
 
-                if ( !parentModelPath.endsWith( "/" ) ) {
-                    parentModelPath += "/";
-                }
+                        // add same scheme if necessary
+                        if ( ( extLocation.indexOf( ':' ) != -1 ) && ( path.indexOf( ':' ) == -1 ) ) {
+                            path = extLocation.substring( 0, extLocation.indexOf( ':' ) + 1 ) + path;
+                        }
 
-                final String fullModelPath = parentModelPath + path;
-                dependencyNode.setProperty( ModelerLexicon.PATH, fullModelPath );
-                LOGGER.debug( "Setting dependency path property to '%s'", fullModelPath );
+                        String dependencyModelPath = "";
+                        final String dependencyArtifactPath = "blahblah"; // TODO need to set later
+                        final String[] extLocSegments = extLocation.split( "/" );
+                        final String[] pathSegments = path.split( "/" );
+                        final List< String > commonPath = new ArrayList<>();
 
-                if ( !exists ) {
-                    final MissingDependency md = new MissingDependency( path, count, parentModelPath );
-                    pathsToMissingDependencies.add( md );
+                        final Node artifactNode = node.getSession().getNode( artifactPath );
+                        final String[] artifactSegments = artifactNode.getPath().split( "/" ); // TODO use this
+
+                        // find common parent path between schema location and model's external location
+                        for ( int i = 0; i < extLocSegments.length; ++i ) {
+                            if ( i < pathSegments.length ) {
+                                if ( extLocSegments[ i ].equals( pathSegments[ i ] ) ) {
+                                    commonPath.add( extLocSegments[ i ] );
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+
+                        // add to the common path the remainder of dependency model's schema location
+                        for ( int i = ( commonPath.size() - 1 ); i > 0; --i ) {
+                            if ( node.getName().equals( commonPath.get( i ) ) ) {
+                                if ( node.getDepth() == 0 ) {
+                                    // TODO at root node so can't get a corresponding parent node
+                                } else {
+                                    node = node.getParent();
+                                }
+                            } else if ( pathSegments.length > i ) {
+                                for ( int j = ( i + 1 ); j < pathSegments.length; ++j ) {
+                                    dependencyModelPath += pathSegments[ j ];
+
+                                    if ( j != ( pathSegments.length - 1 ) ) {
+                                        dependencyModelPath += '/';
+                                    }
+                                }
+
+                                break;
+                            } else {
+                                // TODO ???
+                            }
+                        }
+
+                        final boolean exists = node.hasNode( dependencyModelPath );
+                        String parentPath = node.getPath();
+
+                        if ( !parentPath.endsWith( "/" ) ) {
+                            parentPath += "/";
+                        }
+
+                        dependencyModelPath = parentPath + dependencyModelPath;
+                        dependencyNode.setProperty( ModelerLexicon.PATH, dependencyModelPath );
+                        LOGGER.debug( "Setting dependency path property to '%s'", dependencyModelPath );
+
+                        if ( !exists ) {
+                            final MissingDependency md = new MissingDependency( path, dependencyArtifactPath, dependencyModelPath );
+                            pathsToMissingDependencies.add( md );
+                        }
+                    } else {
+                        // TODO no external location for dependent model node
+                    }
                 }
             }
 
@@ -239,39 +321,49 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
         final String artifactDir = artifactPath.substring( 0, ( artifactPath.lastIndexOf( "/" ) ) );
 
         for ( final MissingDependency missingDependency : missingDependencies ) {
-            String artifactLocation = artifactDir;
-            String location = externalLocation;
-            int numParentDirs = missingDependency.numParentDirs;
+            String extPath;
+            String artifactLocation;
+            String modelPath;
 
-            // navigate up parent dirs if necessary
-            while ( numParentDirs > 0 ) {
-                location = location.substring( 0, ( externalLocation.lastIndexOf( "/" ) ) );
-                artifactLocation = artifactLocation.substring( 0, ( artifactLocation.lastIndexOf( "/" ) ) );
-                --numParentDirs;
+            if ( missingDependency.isRelative() ) {
+                artifactLocation = artifactDir;
+                String location = externalLocation;
+                int numParentDirs = missingDependency.numParentDirs;
+
+                // navigate up parent dirs if necessary
+                while ( numParentDirs > 0 ) {
+                    location = location.substring( 0, ( externalLocation.lastIndexOf( "/" ) ) );
+                    artifactLocation = artifactLocation.substring( 0, ( artifactLocation.lastIndexOf( "/" ) ) );
+                    --numParentDirs;
+                }
+
+                // setup external path
+                extPath = location;
+
+                if ( !extPath.endsWith( "/" ) ) {
+                    extPath += '/';
+                }
+
+                extPath += missingDependency.path;
+
+                // setup dependency artifact path
+                if ( !artifactLocation.endsWith( "/" ) ) {
+                    artifactLocation += "/";
+                }
+
+                artifactLocation += missingDependency.path;
+                modelPath = ( missingDependency.modelParentPath + missingDependency.path );
+            } else {
+                extPath = missingDependency.path;
+                artifactLocation = missingDependency.artifactPath;
+                modelPath = missingDependency.modelPath;
             }
-
-            // setup external path
-            String extPath = location;
-
-            if ( !extPath.endsWith( "/" ) ) {
-                extPath += '/';
-            }
-
-            extPath += missingDependency.relativePath;
-
-            // setup dependency artifact path
-            if ( !artifactLocation.endsWith( "/" ) ) {
-                artifactLocation += "/";
-            }
-
-            artifactLocation += missingDependency.relativePath;
 
             try {
                 LOGGER.debug( "Importing XSD dependency from external path '%s' for source '%s' and path '%s'", extPath, modelName, artifactLocation );
                 final String dependencyArtifactPath = modeler.importArtifact( new URL( extPath ).openStream(), artifactLocation );
 
                 // create model
-                final String modelPath = ( missingDependency.modelParentPath + missingDependency.relativePath );
                 LOGGER.debug( "Generating model for XSD dependency of model '%s' from path '%s'", modelName, modelPath );
                 modeler.generateModel( dependencyArtifactPath, modelPath, modelType, persistArtifacts );
             } catch ( final Exception e ) {
@@ -284,14 +376,35 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
 
         final String modelParentPath;
         final int numParentDirs;
-        final String relativePath;
+        final String path;
+
+        final String modelPath;
+        final String artifactPath;
 
         MissingDependency( final String relativePath,
                            final int numParentDirs,
                            final String modelParentPath ) {
-            this.relativePath = relativePath;
+            this.path = relativePath;
             this.numParentDirs = numParentDirs;
             this.modelParentPath = modelParentPath;
+
+            this.modelPath = null;
+            this.artifactPath = null;
+        }
+
+        MissingDependency( final String externalPath,
+                           final String artifactPath,
+                           final String modelPath ) {
+            this.path = externalPath;
+            this.artifactPath = artifactPath;
+            this.modelPath = modelPath;
+
+            this.numParentDirs = -1;
+            this.modelParentPath = null;
+        }
+
+        boolean isRelative() {
+            return ( this.numParentDirs != -1 );
         }
 
     }
