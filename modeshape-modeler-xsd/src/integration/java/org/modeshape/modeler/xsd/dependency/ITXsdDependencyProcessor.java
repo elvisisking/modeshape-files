@@ -31,6 +31,10 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.net.URL;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -64,6 +68,63 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
         this.processor = new XsdDependencyProcessor();
         modelTypeManager().install( "sramp" );
         modelTypeManager().install( "xsd" );
+    }
+
+    @Test
+    public void shouldFindDependencyWithAbstractPath() throws Exception {
+        // create dependency XSD
+        final Path a = Files.createTempDirectory( null );
+        final Path b = Files.createTempDirectory( a, null );
+        final Path c = Files.createTempDirectory( b, null );
+        final Path dependencyXsdPath = Files.createTempFile( c, null, ".xsd" );
+
+        // create dependent XSD content
+        final StringBuilder content = new StringBuilder( XML_DECLARATION );
+        content.append( "<xsd:schema targetNamespace=\"http://www.blahblah.com/XMLSchema/Blah/Blah\" " );
+        content.append( "xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" >" );
+        content.append( "<xsd:import namespace=\"http://www.blahblah.com/XMLSchema/Blah/BlahBlahTypes\" " );
+        content.append( "schemaLocation=\"" ).append( dependencyXsdPath.toString() );
+        content.append( "\" />" );
+        content.append( "</xsd:schema>" );
+
+        // create dependent XSD file with content
+        final Path dependentXsdPath = Files.createTempFile( b, null, ".xsd" );
+        final File xsd = dependentXsdPath.toFile();
+        Files.write( FileSystems.getDefault().getPath( xsd.getAbsolutePath() ),
+                     content.toString().getBytes(),
+                     StandardOpenOption.CREATE );
+
+        // create XSD workspace artifact
+        final String xsdName = xsd.getName();
+        final String workspacePath = modeler().importFile( xsd, "artifact" );
+        assertThat( workspacePath, is( "/artifact/" + xsdName ) );
+
+        // create model
+        final ModelType xsdModelType = xsdModelType();
+        final ModelImpl model = ( ModelImpl ) modeler().generateModel( workspacePath, "model/dependentXsd", xsdModelType, true );
+
+        // check dependencies
+        manager().run( new Task< Node >() {
+
+            @Override
+            public Node run( final Session session ) throws Exception {
+                final Node modelNode = session.getNode( model.absolutePath() );
+                final String dependenciesPath = processor.process( workspacePath, modelNode, modeler(), true );
+                assertThat( dependenciesPath, notNullValue() );
+
+                final Node dependenciesNode = session.getNode( dependenciesPath );
+                assertThat( dependenciesNode.getNodes().getSize(), is( 1L ) );
+
+                final Node dependencyNode = dependenciesNode.getNodes().nextNode();
+                final String dependencyModelName = "/model/" + c.getFileName() + '/' + dependencyXsdPath.getFileName();
+                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH ).getString(), is( dependencyModelName ) );
+
+                // TODO uncomment this test out when the artifact path is correct
+                // session.getNode( "/artifact/" + c.getFileName().toString() + '/' + dependencyXsdPath.getFileName() );
+
+                return null;
+            }
+        } );
     }
 
     @Test
