@@ -23,13 +23,29 @@
  */
 package org.modeshape.modeler.xsd;
 
-/**
- * The model lexicon for the XSD modeler.
- */
-public interface XsdLexicon {
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 
-    /**
-     * The name of the XSD model node. Value is {@value} .
-     */
-    String MODEL_TYPE_ID = "org.modeshape.modeler.xsd.Xsd";
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+
+import org.junit.Test;
+import org.modeshape.modeler.Model;
+import org.modeshape.modeler.xsd.test.XsdBaseTest;
+
+@SuppressWarnings( "javadoc" )
+public class XsdDesquencerTest extends XsdBaseTest {
+
+    @Test
+    public void shouldDesequence() throws Exception {
+        modelTypeManager().install( SRAMP_MODEL_TYPE_CATEGORY );
+        modelTypeManager().install( XSD_MODEL_TYPE_CATEGORY );
+        final Model model = modeler().generateModel( new File( "src/test/resources/Books/Books.xsd" ),
+                                                     null,
+                                                     modelTypeManager().modelType( XSD_MODEL_TYPE_ID ) );
+        try ( final ByteArrayOutputStream stream = new ByteArrayOutputStream() ) {
+            new XsdDesequencer().execute( model, stream );
+            assertThat( stream.toString().startsWith( XML_DECLARATION + "\n<xsd:schema " ), is( true ) );
+        }
+    }
 }

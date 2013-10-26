@@ -25,6 +25,7 @@ package org.modeshape.modeler;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -112,8 +113,8 @@ public final class ModeShapeModeler implements Modeler {
         CheckArg.isNotNull( model, "model" );
         CheckArg.isNotNull( file, "file" );
         try {
-            export( model, file.toURI().toURL() );
-        } catch ( final MalformedURLException e ) {
+            export( model, new FileOutputStream( file ) );
+        } catch ( final FileNotFoundException e ) {
             throw new ModelerException( e );
         }
     }
@@ -128,7 +129,7 @@ public final class ModeShapeModeler implements Modeler {
                         final OutputStream stream ) throws ModelerException {
         CheckArg.isNotNull( model, "model" );
         CheckArg.isNotNull( stream, "stream" );
-        ( ( ModelTypeImpl ) model.modelType() ).desequencer().execute( model );
+        ( ( ModelTypeImpl ) model.modelType() ).desequencer().execute( model, stream );
     }
 
     /**

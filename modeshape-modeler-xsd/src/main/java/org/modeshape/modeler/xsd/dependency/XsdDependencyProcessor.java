@@ -38,14 +38,14 @@ import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.extensions.DependencyProcessor;
 import org.modeshape.modeler.internal.ModelerLexicon;
-import org.modeshape.modeler.xsd.XsdLexicon;
 import org.modeshape.modeler.xsd.XsdModelerI18n;
+import org.modeshape.sequencer.xsd.XsdLexicon;
 import org.polyglotter.common.Logger;
 
 /**
  * The XSD dependency processor for the ModeShape modeler.
  */
-public final class XsdDependencyProcessor implements DependencyProcessor, XsdLexicon {
+public final class XsdDependencyProcessor implements DependencyProcessor {
 
     private static final Logger LOGGER = Logger.getLogger( XsdDependencyProcessor.class );
 
@@ -86,7 +86,9 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
         assert ( node != null );
 
         final String primaryType = node.getPrimaryNodeType().getName();
-        return ( IMPORT.equals( primaryType ) || INCLUDE.equals( primaryType ) || REDEFINE.equals( primaryType ) );
+        return ( XsdLexicon.IMPORT.equals( primaryType )
+                 || XsdLexicon.INCLUDE.equals( primaryType )
+                 || XsdLexicon.REDEFINE.equals( primaryType ) );
     }
 
     /**
@@ -114,7 +116,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                 while ( itr.hasNext() ) {
                     final Node kid = itr.nextNode();
 
-                    if ( SCHEMA_DOCUMENT.equals( kid.getPrimaryNodeType().getName() ) ) {
+                    if ( XsdLexicon.SCHEMA_DOCUMENT.equals( kid.getPrimaryNodeType().getName() ) ) {
                         schemaNode = kid;
                         break;
                     }
@@ -157,7 +159,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                     dependenciesNode.addNode( ModelerLexicon.DEPENDENCY, ModelerLexicon.DEPENDENCY );
 
                 // set input property
-                final Property locationProp = kid.getProperty( SCHEMA_LOCATION );
+                final Property locationProp = kid.getProperty( XsdLexicon.SCHEMA_LOCATION );
                 final String location = locationProp.getString();
                 dependencyNode.setProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY, new String[] { location } );
                 LOGGER.debug( "Setting dependency source reference property to '%s'", location );

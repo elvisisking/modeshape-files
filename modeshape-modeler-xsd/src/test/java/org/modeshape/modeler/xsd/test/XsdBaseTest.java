@@ -21,15 +21,14 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.modeler.xsd;
+package org.modeshape.modeler.xsd.test;
 
-/**
- * The model lexicon for the XSD modeler.
- */
-public interface XsdLexicon {
+import org.modeshape.modeler.test.BaseTest;
 
-    /**
-     * The name of the XSD model node. Value is {@value} .
-     */
-    String MODEL_TYPE_ID = "org.modeshape.modeler.xsd.Xsd";
+@SuppressWarnings( "javadoc" )
+public abstract class XsdBaseTest extends BaseTest {
+
+    protected static final String SRAMP_MODEL_TYPE_CATEGORY = "sramp";
+    protected static final String XSD_MODEL_TYPE_CATEGORY = "xsd";
+    protected static final String XSD_MODEL_TYPE_ID = "org.modeshape.modeler.xsd.Xsd";
 }
