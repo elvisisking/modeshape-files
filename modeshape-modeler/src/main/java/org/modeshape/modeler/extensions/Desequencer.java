@@ -23,7 +23,10 @@
  */
 package org.modeshape.modeler.extensions;
 
+import java.io.OutputStream;
+
 import org.modeshape.modeler.Model;
+import org.modeshape.modeler.ModelerException;
 
 /**
  * 
@@ -33,6 +36,11 @@ public interface Desequencer {
     /**
      * @param model
      *        a model
+     * @param stream
+     *        the output stream to which the model will be desequenced
+     * @throws ModelerException
+     *         if any error occurs
      */
-    void execute( Model model );
+    void execute( Model model,
+                  OutputStream stream ) throws ModelerException;
 }

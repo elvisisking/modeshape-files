@@ -61,7 +61,7 @@ public abstract class BaseTest {
     protected static final String XML_LEAF = "child";
     protected static final String XML_STRING_VALUE = "string";
     protected static final String XML_SAME_NAME_SIBLING = "sameNameSibling";
-    protected static final String XML_DECLARATION = "<?xml version='1.0' encoding='UTF-8'?>";
+    protected static final String XML_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
     protected static final String XML_ARTIFACT = XML_DECLARATION
                                                  + '<' + XML_ROOT + " " + XML_ROOT_PROPERTY + "='" + XML_STRING_VALUE + "'>"
                                                  + "<" + XML_LEAF + "></" + XML_LEAF + ">"
